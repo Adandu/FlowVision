@@ -11,7 +11,8 @@ export async function middleware(request: NextRequest) {
 
   let guestModeEnabled = false;
   try {
-    const configRes = await fetch(new URL('/api/config', request.url).toString(), { next: { revalidate: 10 } });
+    const apiUrl = `http://127.0.0.1:${process.env.PORT || 3000}/api/config`;
+    const configRes = await fetch(apiUrl, { next: { revalidate: 10 } });
     const config = await configRes.json();
     guestModeEnabled = !!config.guest_mode_enabled;
   } catch (e) { }

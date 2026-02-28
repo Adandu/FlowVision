@@ -110,7 +110,7 @@ export default function Dashboard() {
             </h2>
             {loading && <div className="animate-pulse w-3 h-3 rounded-full bg-blue-500" />}
           </div>
-          {data && <BandwidthChart data={data.timeSeries} timezone={timezone} tzOffsetMinutes={getTimezoneOffsetMinutes(timezone)} />}
+          {data && <BandwidthChart data={data.timeSeries} timezone={timezone} tzOffsetMinutes={getTimezoneOffsetMinutes(timezone)} interval={interval} />}
         </div>
 
         {/* Protocol + Top Charts */}
