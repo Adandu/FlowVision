@@ -94,11 +94,11 @@ export default function Dashboard() {
 
         {/* Header Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <StatCard title="Total Bandwidth" value={loading ? '...' : formatBytes(data?.timeSeries?.reduce((a: number, c: any) => a + c.total_bytes, 0) || 0)} icon={<ArrowRightLeft />} color="blue" span={2} />
-          <StatCard title="Active IPs" value={loading ? '...' : ((data?.topSources?.length || 0) + (data?.topDestinations?.length || 0)).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} />
-          <StatCard title="Active Services" value={loading ? '...' : (data?.topPorts?.length || 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} />
-          <StatCard title="Outbound" value={loading ? '...' : formatBytes(Number(dir.outbound_bytes) || 0)} icon={<ArrowUpRight />} color="orange" />
-          <StatCard title="Inbound" value={loading ? '...' : formatBytes(Number(dir.inbound_bytes) || 0)} icon={<ArrowDownLeft />} color="teal" />
+          <StatCard title="Total Bandwidth" value={!data && loading ? '...' : formatBytes(data?.timeSeries?.reduce((a: number, c: any) => a + c.total_bytes, 0) || 0)} icon={<ArrowRightLeft />} color="blue" span={2} />
+          <StatCard title="Active IPs" value={!data && loading ? '...' : ((data?.topSources?.length || 0) + (data?.topDestinations?.length || 0)).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} />
+          <StatCard title="Active Services" value={!data && loading ? '...' : (data?.topPorts?.length || 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} />
+          <StatCard title="Outbound" value={!data && loading ? '...' : formatBytes(Number(dir.outbound_bytes) || 0)} icon={<ArrowUpRight />} color="orange" />
+          <StatCard title="Inbound" value={!data && loading ? '...' : formatBytes(Number(dir.inbound_bytes) || 0)} icon={<ArrowDownLeft />} color="teal" />
         </div>
 
         {/* Bandwidth Chart */}

@@ -28,7 +28,7 @@ export default function AdminUsersPage() {
                 setUsers(usersRes.data);
             }
             if (settingsRes.success) {
-                setGuestMode(settingsRes.settings?.guest_mode_enabled === '1');
+                setGuestMode(settingsRes.data?.guest_mode_enabled === '1');
             }
         } catch (error) {
             console.error("Failed to load data:", error);

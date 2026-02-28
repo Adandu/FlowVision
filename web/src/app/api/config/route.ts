@@ -4,7 +4,7 @@ import { clickhouse } from '@/lib/clickhouse';
 export async function GET() {
     try {
         const rows = await clickhouse.query({
-            query: `SELECT value FROM system_settings WHERE name = 'guest_mode_enabled'`,
+            query: `SELECT value FROM settings FINAL WHERE key = 'guest_mode_enabled'`,
             format: 'JSONEachRow'
         }).then(r => r.json()) as any[];
 
