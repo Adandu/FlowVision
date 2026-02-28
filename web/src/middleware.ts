@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout', '/_next', '/favicon.ico', '/api/config'];
-const GUEST_PATHS = ['/', '/ip', '/active-ips', '/active-services', '/flow-log', '/alerts'];
+const GUEST_PATHS = ['/', '/active-ips', '/active-services', '/flow-log'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -18,8 +18,8 @@ export async function middleware(request: NextRequest) {
   } catch (e) { }
 
   if (guestModeEnabled) {
-    const isProtectedApi = pathname.startsWith('/api/admin') || pathname.startsWith('/api/auth/me') || pathname.startsWith('/api/profile');
-    const isGuestRoute = GUEST_PATHS.includes(pathname) || pathname.startsWith('/ip/') || (pathname.startsWith('/api/') && !isProtectedApi);
+    const isProtectedApi = pathname.startsWith('/api/admin') || pathname.startsWith('/api/auth/me') || pathname.startsWith('/api/profile') || pathname.startsWith('/api/alerts');
+    const isGuestRoute = GUEST_PATHS.includes(pathname) || (pathname.startsWith('/api/') && !isProtectedApi);
     if (isGuestRoute) return NextResponse.next();
   }
 

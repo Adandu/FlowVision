@@ -9,28 +9,46 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
     const interval = url.searchParams.get('interval') || '24h';
 
     let timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
-    let timeGroup = 'toStartOfMinute(timestamp)';
+    let timeGroup = 'toStartOfHour(timestamp)';
+    let fillFrom = 'toStartOfHour(now() - INTERVAL 24 HOUR)';
+    let fillTo = 'toStartOfHour(now())';
+    let fillStep = '3600';
 
     switch (interval) {
         case '10m':
             timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE';
             timeGroup = 'toStartOfMinute(timestamp)';
+            fillFrom = 'toStartOfMinute(now() - INTERVAL 10 MINUTE)';
+            fillTo = 'toStartOfMinute(now())';
+            fillStep = '60';
             break;
         case '1h':
             timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR';
             timeGroup = 'toStartOfMinute(timestamp)';
+            fillFrom = 'toStartOfMinute(now() - INTERVAL 1 HOUR)';
+            fillTo = 'toStartOfMinute(now())';
+            fillStep = '60';
             break;
         case '24h':
             timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
             timeGroup = 'toStartOfHour(timestamp)';
+            fillFrom = 'toStartOfHour(now() - INTERVAL 24 HOUR)';
+            fillTo = 'toStartOfHour(now())';
+            fillStep = '3600';
             break;
         case '7d':
             timeFilter = 'timestamp >= now() - INTERVAL 7 DAY';
             timeGroup = 'toStartOfHour(timestamp)';
+            fillFrom = 'toStartOfHour(now() - INTERVAL 7 DAY)';
+            fillTo = 'toStartOfHour(now())';
+            fillStep = '3600';
             break;
         case '30d':
             timeFilter = 'timestamp >= now() - INTERVAL 30 DAY';
             timeGroup = 'toStartOfDay(timestamp)';
+            fillFrom = 'toStartOfDay(now() - INTERVAL 30 DAY)';
+            fillTo = 'toStartOfDay(now())';
+            fillStep = '86400';
             break;
     }
 
@@ -64,10 +82,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             // Bandwidth timeline as source
             clickhouse.query({
                 query: `
-                    SELECT ${timeGroup} AS time, SUM(bytes) AS bytes
+                    SELECT ${timeGroup} AS time, toUInt64(SUM(bytes)) AS bytes
                     FROM flows
                     WHERE src_ip = {ip:String} AND ${timeFilter}
                     GROUP BY time ORDER BY time ASC
+                    WITH FILL FROM ${fillFrom} TO ${fillTo} STEP ${fillStep}
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
@@ -76,10 +95,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             // Bandwidth timeline as destination
             clickhouse.query({
                 query: `
-                    SELECT ${timeGroup} AS time, SUM(bytes) AS bytes
+                    SELECT ${timeGroup} AS time, toUInt64(SUM(bytes)) AS bytes
                     FROM flows
                     WHERE dst_ip = {ip:String} AND ${timeFilter}
                     GROUP BY time ORDER BY time ASC
+                    WITH FILL FROM ${fillFrom} TO ${fillTo} STEP ${fillStep}
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
@@ -158,6 +178,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
         return NextResponse.json({
             success: true,
             data: {
+                requested_ip: user ? ip : obfuscateIp(ip),
                 summary: summaryRows[0] || null,
                 timelineAsSrc: timelineAsSrcRows,
                 timelineAsDst: timelineAsDstRows,

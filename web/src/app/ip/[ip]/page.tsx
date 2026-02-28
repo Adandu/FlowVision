@@ -34,6 +34,7 @@ export default function IPDetailPage() {
     const [flowDiagram, setFlowDiagram] = useState<any>(null);
     const [geo, setGeo] = useState<any>(null);
     const [hostname, setHostname] = useState<string | null>(null);
+    const [displayIp, setDisplayIp] = useState<string>(ip);
     const [loading, setLoading] = useState(true);
 
     const intervals: { label: string; value: IntervalType | 'Live' }[] = [
@@ -64,7 +65,10 @@ export default function IPDetailPage() {
 
                 if (!isMounted) return;
 
-                if (ipData.success) setData(ipData.data);
+                if (ipData.success) {
+                    setData(ipData.data);
+                    if (ipData.data.requested_ip) setDisplayIp(ipData.data.requested_ip);
+                }
                 if (donutsData.success) setDonuts(donutsData);
                 if (diagramData.success) setFlowDiagram(diagramData.data);
                 if (geoData.success) setGeo(geoData.data);
@@ -104,7 +108,7 @@ export default function IPDetailPage() {
                             <ArrowLeft className="w-4 h-4" /> Back to IP Search
                         </Link>
                         <div className="flex items-center gap-3 flex-wrap">
-                            <h1 className="text-3xl font-bold text-gray-100 font-mono">{ip}</h1>
+                            <h1 className="text-3xl font-bold text-gray-100 font-mono">{displayIp}</h1>
                             {geo?.flag && <span className="text-3xl">{geo.flag}</span>}
                             {hostname && <span className="text-sm text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-full font-mono">{hostname}</span>}
                         </div>
@@ -166,7 +170,7 @@ export default function IPDetailPage() {
                                     <ArrowUpRight className="w-4 h-4 text-blue-400" /> Outgoing Traffic Bandwidth
                                 </h3>
                                 {data.timelineAsSrc?.length > 0
-                                    ? <BandwidthChart data={data.timelineAsSrc.map((d: any) => ({ time: d.time, total_bytes: d.bytes }))} timezone={timezone} />
+                                    ? <BandwidthChart data={data.timelineAsSrc.map((d: any) => ({ time: d.time, total_bytes: d.bytes }))} timezone={timezone} interval={interval} />
                                     : <p className="text-gray-500 text-sm text-center py-8">No outgoing traffic in interval</p>}
                             </div>
                             <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
@@ -174,7 +178,7 @@ export default function IPDetailPage() {
                                     <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> Incoming Traffic Bandwidth
                                 </h3>
                                 {data.timelineAsDst?.length > 0
-                                    ? <BandwidthChart data={data.timelineAsDst.map((d: any) => ({ time: d.time, total_bytes: d.bytes }))} timezone={timezone} />
+                                    ? <BandwidthChart data={data.timelineAsDst.map((d: any) => ({ time: d.time, total_bytes: d.bytes }))} timezone={timezone} interval={interval} />
                                     : <p className="text-gray-500 text-sm text-center py-8">No incoming traffic in interval</p>}
                             </div>
                         </div>
