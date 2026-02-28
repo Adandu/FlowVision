@@ -58,16 +58,16 @@ export async function GET(request: Request) {
                 FROM toStartOfInterval(now() - INTERVAL 5 MINUTE, INTERVAL 5 SECOND)
                 TO toStartOfInterval(now(), INTERVAL 5 SECOND)
                 STEP 5`;
-    } else { // 1m Live Mode Dashboard
+    } else { // 3m Live Mode Dashboard
       timeSeriesQuery = `
-              SELECT toStartOfInterval(timestamp, INTERVAL 1 SECOND) AS time, toUInt64(SUM(bytes)) AS total_bytes
+              SELECT toStartOfInterval(timestamp, INTERVAL 3 SECOND) AS time, toUInt64(SUM(bytes)) AS total_bytes
               FROM flows
               WHERE timestamp >= now() - INTERVAL 1 MINUTE
               GROUP BY time ORDER BY time ASC
               WITH FILL
-                FROM toStartOfInterval(now() - INTERVAL 1 MINUTE, INTERVAL 1 SECOND)
-                TO toStartOfInterval(now(), INTERVAL 1 SECOND)
-                STEP 1`;
+                FROM toStartOfInterval(now() - INTERVAL 1 MINUTE, INTERVAL 3 SECOND)
+                TO toStartOfInterval(now(), INTERVAL 3 SECOND)
+                STEP 3`;
     }
 
     const limit = parseInt(searchParams.get('limit') || '10', 10);
