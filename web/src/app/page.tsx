@@ -40,8 +40,8 @@ export default function Dashboard() {
     async function fetchData() {
       setLoading(true);
       try {
-        // If Live, fetch the last 5m to show real-time spikes in 5s buckets
-        const queryInterval = interval === 'Live' ? '5m' : interval;
+        // If Live, fetch the last 1m to show real-time spikes in 1s buckets
+        const queryInterval = interval === 'Live' ? '1m' : interval;
         const [flowsRes, recentRes] = await Promise.all([
           fetch(`/api/flows?interval=${queryInterval}`),
           fetch('/api/flows/recent'),

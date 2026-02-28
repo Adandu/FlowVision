@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
+import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -8,6 +9,7 @@ export async function GET(request: Request) {
 
   let timeFilter = '';
   switch (interval) {
+    case '1m': timeFilter = 'timestamp >= now() - INTERVAL 1 MINUTE'; break;
     case '5m': timeFilter = 'timestamp >= now() - INTERVAL 5 MINUTE'; break;
     case '10m': timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE'; break;
     case '1h': timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; break;
@@ -38,11 +40,17 @@ export async function GET(request: Request) {
               FROM flows_1m_mv
               WHERE minute >= now() - INTERVAL ${interval === '10m' ? '10 MINUTE' : '1 HOUR'}
               GROUP BY time ORDER BY time ASC`;
-    } else { // 5m Live Mode
+    } else if (interval === '5m') { // Used by Active Pages if Live
       timeSeriesQuery = `
               SELECT toStartOfInterval(timestamp, INTERVAL 5 SECOND) AS time, SUM(bytes) AS total_bytes
               FROM flows
               WHERE timestamp >= now() - INTERVAL 5 MINUTE
+              GROUP BY time ORDER BY time ASC`;
+    } else { // 1m Live Mode Dashboard
+      timeSeriesQuery = `
+              SELECT toStartOfInterval(timestamp, INTERVAL 1 SECOND) AS time, SUM(bytes) AS total_bytes
+              FROM flows
+              WHERE timestamp >= now() - INTERVAL 1 MINUTE
               GROUP BY time ORDER BY time ASC`;
     }
 
@@ -110,9 +118,15 @@ export async function GET(request: Request) {
       .sort((a, b) => b.total_bytes - a.total_bytes)
       .slice(0, 10);
 
-    // Apply Admin IP Aliases
-    await applyAliases(topDestinations);
-    await applyAliases(topSources);
+    // Apply Admin IP Aliases or Obfuscate for Guests
+    const user = await getCurrentUser();
+    if (!user) {
+      topDestinations.forEach((d: any) => d.ip = obfuscateIp(d.ip));
+      topSources.forEach((s: any) => s.ip = obfuscateIp(s.ip));
+    } else {
+      await applyAliases(topDestinations);
+      await applyAliases(topSources);
+    }
 
     return NextResponse.json({
       success: true,

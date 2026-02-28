@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
+import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 
 export async function GET(req: Request, { params }: { params: Promise<{ ip: string }> }) {
     try {
@@ -59,8 +60,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             format: 'JSONEachRow'
         }).then(r => r.json());
 
-        await applyAliases(incoming);
-        await applyAliases(outgoing);
+        const user = await getCurrentUser();
+        if (!user) {
+            incoming.forEach((r: any) => r.src_ip = obfuscateIp(r.src_ip));
+            outgoing.forEach((r: any) => r.dst_ip = obfuscateIp(r.dst_ip));
+        } else {
+            await applyAliases(incoming);
+            await applyAliases(outgoing);
+        }
 
         return NextResponse.json({ success: true, incoming, outgoing, topPorts });
     } catch (error) {

@@ -129,6 +129,12 @@ export default function Navbar() {
                             </div>
                         )}
 
+                        {!user && (
+                            <Link href="/login" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border border-emerald-500/30 transition-all">
+                                <LogOut className="w-4 h-4 rotate-180" /> Login
+                            </Link>
+                        )}
+
                         {/* Mobile Hamburger Toggle */}
                         <div className="md:hidden ml-2 flex items-center">
                             <button onClick={() => { setMobileOpen(!mobileOpen); setTzOpen(false); setUserOpen(false); }}
