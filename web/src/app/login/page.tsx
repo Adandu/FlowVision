@@ -36,7 +36,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+        <div className="min-h-[100dvh] bg-gray-950 flex items-center justify-center p-4">
             {/* Background grid */}
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
 

@@ -53,7 +53,7 @@ export default function IPDetailPage() {
     return (
         <div className="min-h-screen bg-gray-950 pb-12">
             <Navbar />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-6">
+            <main className="px-4 sm:px-6 lg:px-8 mt-8 space-y-6">
                 {/* Back + Header */}
                 <div>
                     <Link href="/" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 mb-4 transition-colors w-fit">

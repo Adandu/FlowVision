@@ -19,18 +19,31 @@ type IntervalType = '10m' | '1h' | '24h' | '1w' | '1m';
 export default function Dashboard() {
   const { timezone } = useTimezone();
   const router = useRouter();
-  const [interval, setIntervalState] = useState<IntervalType>('1h');
+  const [interval, setIntervalState] = useState<IntervalType | 'Live'>('Live');
   const [data, setData] = useState<any>(null);
   const [flows, setFlows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const intervals: { label: string; value: IntervalType | 'Live' }[] = [
+    { label: 'Live', value: 'Live' },
+    { label: '10 Mins', value: '10m' },
+    { label: '1 Hour', value: '1h' },
+    { label: '24 Hours', value: '24h' },
+    { label: '1 Week', value: '1w' },
+    { label: '1 Month', value: '1m' },
+  ];
+
   useEffect(() => {
     let isMounted = true;
+    let timer: number;
+
     async function fetchData() {
       setLoading(true);
       try {
+        // If Live, fetch the last 10m to show recent spikes
+        const queryInterval = interval === 'Live' ? '10m' : interval;
         const [flowsRes, recentRes] = await Promise.all([
-          fetch(`/api/flows?interval=${interval}`),
+          fetch(`/api/flows?interval=${queryInterval}`),
           fetch('/api/flows/recent'),
         ]);
         const json = await flowsRes.json();
@@ -46,18 +59,19 @@ export default function Dashboard() {
         if (isMounted) setLoading(false);
       }
     }
+
+    // Initial fetch
     fetchData();
-    const timer = window.setInterval(fetchData, 60000);
+
+    // Setup polling
+    if (interval === 'Live') {
+      timer = window.setInterval(fetchData, 3000); // 3 seconds for Live
+    } else {
+      timer = window.setInterval(fetchData, 60000); // 60 seconds otherwise
+    }
+
     return () => { isMounted = false; clearInterval(timer); };
   }, [interval]);
-
-  const intervals: { label: string; value: IntervalType }[] = [
-    { label: '10 Mins', value: '10m' },
-    { label: '1 Hour', value: '1h' },
-    { label: '24 Hours', value: '24h' },
-    { label: '1 Week', value: '1w' },
-    { label: '1 Month', value: '1m' },
-  ];
 
   const dir = data?.trafficDirection || {};
 

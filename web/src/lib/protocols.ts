@@ -7,7 +7,7 @@ export const PORT_TO_APP: Record<number, string> = {
 
     // Infrastructure / Core
     53: 'DNS',
-    853: 'DNS-over-TLS',
+    853: 'Secure DNS',
     123: 'NTP',
     67: 'DHCP',
     68: 'DHCP',

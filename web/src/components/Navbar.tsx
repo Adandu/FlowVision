@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Activity, Globe, ChevronDown, User, LogOut, Settings, LayoutDashboard, List, Bell } from 'lucide-react';
+import { Activity, Globe, ChevronDown, User, LogOut, Settings, LayoutDashboard, List, Bell, Network } from 'lucide-react';
 import { useTimezone, TIMEZONE_LIST, type TZEntry } from '@/lib/timezone';
 
 export default function Navbar() {
@@ -52,6 +52,9 @@ export default function Navbar() {
                         </Link>
                         <Link href="/flow-log" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <List className="w-4 h-4" /> Flow Log
+                        </Link>
+                        <Link href="/flow-diagram" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <Network className="w-4 h-4" /> Flow Diagram
                         </Link>
                         <Link href="/alerts" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <Bell className="w-4 h-4" /> Alerts

@@ -14,38 +14,37 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ip: str
     }
 
     try {
-        const res = await fetch(
-            `http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,isp,org,as,lat,lon,timezone,query`,
-            { next: { revalidate: 3600 } }
-        );
+        const res = await fetch(`https://ipinfo.io/${ip}/json`, { next: { revalidate: 3600 } });
 
-        if (!res.ok) throw new Error('ip-api.com request failed');
+        if (!res.ok) throw new Error('ipinfo.io request failed');
 
         const json = await res.json();
 
-        if (json.status !== 'success') {
-            // Private/reserved IPs return 'fail' — return a graceful private result
+        if (json.bogon) {
+            // Private/reserved IPs return 'bogon': true
             const data = { private: true, country: 'Private Network', countryCode: 'LAN', isp: 'Local', city: '', flag: '🏠' };
             geoCache.set(ip, { data, ts: Date.now() });
             return NextResponse.json({ success: true, data });
         }
 
         // Add flag emoji using country code
-        const flag = json.countryCode
-            ? String.fromCodePoint(...json.countryCode.toUpperCase().split('').map((c: string) => 0x1F1E6 - 65 + c.charCodeAt(0)))
+        const flag = json.country
+            ? String.fromCodePoint(...json.country.toUpperCase().split('').map((c: string) => 0x1F1E6 - 65 + c.charCodeAt(0)))
             : '🌐';
 
+        const latlon = json.loc ? json.loc.split(',') : [0, 0];
+
         const data = {
-            country: json.country,
-            countryCode: json.countryCode,
-            region: json.regionName,
-            city: json.city,
-            isp: json.isp,
-            asn: json.as,
-            org: json.org,
-            lat: json.lat,
-            lon: json.lon,
-            timezone: json.timezone,
+            country: json.country || '',
+            countryCode: json.country || '',
+            region: json.region || '',
+            city: json.city || '',
+            isp: json.org || '',
+            asn: json.org || '', // ASN is included in the org field in ipinfo.io (e.g., 'AS15169 Google LLC')
+            org: json.org || '',
+            lat: parseFloat(latlon[0]),
+            lon: parseFloat(latlon[1]),
+            timezone: json.timezone || '',
             flag,
             private: false,
         };
