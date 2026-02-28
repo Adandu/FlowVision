@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  flowvision:
+    image: flowvision:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.all-in-one
+    container_name: flowvision
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # Web UI
+      - "2055:2055/udp" # NetFlow v5/v9 receiver
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./docker/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+    environment:
+      # ── Authentication ─────────────────────────────────────────────────────
+      # AUTH_MODE options:
+      #   disabled  — no login required (default for first run / homelab)
+      #   local     — username/password login via FlowVision UI
+      #   proxy     — trust Remote-User / X-Forwarded-User header (Authelia/Authentik)
+      AUTH_MODE: "local"
+
+      # Initial admin password — only used on first boot to create the admin user
+      # CHANGE THIS before running!
+      ADMIN_PASSWORD: "changeme"
+
+      # Secret key for JWT signing — CHANGE THIS in production!
+      JWT_SECRET: "change-this-to-a-random-32-char-secret"
+
+volumes:
+  clickhouse_data:
+    driver: local
