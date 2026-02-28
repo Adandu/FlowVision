@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Activity, Globe, ChevronDown, User, LogOut, Settings, LayoutDashboard, List, Bell, Network } from 'lucide-react';
+import { Activity, Globe, ChevronDown, User, LogOut, Settings, LayoutDashboard, List, Bell, Network, Menu, X } from 'lucide-react';
 import { useTimezone, TIMEZONE_LIST, type TZEntry } from '@/lib/timezone';
 
 export default function Navbar() {
     const { timezone, setTimezone } = useTimezone();
     const [tzOpen, setTzOpen] = useState(false);
     const [userOpen, setUserOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [tzSearch, setTzSearch] = useState('');
     const [user, setUser] = useState<any>(null);
     const router = useRouter();
@@ -45,7 +46,7 @@ export default function Navbar() {
                         </span>
                     </div>
 
-                    {/* Nav links */}
+                    {/* Desktop Nav links */}
                     <div className="hidden md:flex items-center space-x-1">
                         <Link href="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <LayoutDashboard className="w-4 h-4" /> Dashboard
@@ -69,7 +70,7 @@ export default function Navbar() {
                     <div className="flex items-center gap-2">
                         {/* Timezone selector */}
                         <div className="relative">
-                            <button onClick={() => { setTzOpen(!tzOpen); setUserOpen(false); }}
+                            <button onClick={() => { setTzOpen(!tzOpen); setUserOpen(false); setMobileOpen(false); }}
                                 className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 border border-gray-700 transition-all">
                                 <Globe className="w-4 h-4 text-blue-400" />
                                 <span className="max-w-[130px] truncate hidden sm:block">{timezone}</span>
@@ -98,7 +99,7 @@ export default function Navbar() {
                         {/* User menu */}
                         {user && (
                             <div className="relative">
-                                <button onClick={() => { setUserOpen(!userOpen); setTzOpen(false); }}
+                                <button onClick={() => { setUserOpen(!userOpen); setTzOpen(false); setMobileOpen(false); }}
                                     className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-gray-800 transition-all">
                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 flex items-center justify-center text-xs font-bold text-white">
                                         {initials}
@@ -132,8 +133,39 @@ export default function Navbar() {
                                 )}
                             </div>
                         )}
+
+                        {/* Mobile Hamburger Toggle */}
+                        <div className="md:hidden ml-2 flex items-center">
+                            <button onClick={() => { setMobileOpen(!mobileOpen); setTzOpen(false); setUserOpen(false); }}
+                                className="text-gray-400 hover:text-white transition-colors p-1">
+                                {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            </button>
+                        </div>
                     </div>
                 </div>
+
+                {/* Mobile Navigation Menu */}
+                {mobileOpen && (
+                    <div className="md:hidden py-4 border-t border-gray-800 flex flex-col gap-2">
+                        <Link href="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <LayoutDashboard className="w-5 h-5 text-gray-400" /> Dashboard
+                        </Link>
+                        <Link href="/flow-log" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <List className="w-5 h-5 text-gray-400" /> Flow Log
+                        </Link>
+                        <Link href="/flow-diagram" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <Network className="w-5 h-5 text-gray-400" /> Flow Diagram
+                        </Link>
+                        <Link href="/alerts" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <Bell className="w-5 h-5 text-gray-400" /> Alerts
+                        </Link>
+                        {user?.role === 'admin' && (
+                            <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 transition-all">
+                                <Settings className="w-5 h-5 text-amber-500/80" /> Admin
+                            </Link>
+                        )}
+                    </div>
+                )}
             </div>
         </nav>
     );

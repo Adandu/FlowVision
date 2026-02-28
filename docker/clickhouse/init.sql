@@ -39,3 +39,13 @@ AS SELECT
     sumState(packets) AS packets_sum
 FROM flows
 GROUP BY hour;
+
+-- IP Aliases Table (User-defined custom names for IP addresses)
+CREATE TABLE IF NOT EXISTS ip_aliases
+(
+    ip String,
+    alias String,
+    updated_at DateTime DEFAULT now()
+)
+ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY ip;

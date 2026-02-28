@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
+import { applyAliases } from '@/lib/aliases';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -23,6 +24,8 @@ export async function GET(request: Request) {
             `,
             format: 'JSONEachRow',
         }).then(r => r.json());
+
+        await applyAliases(rows);
 
         return NextResponse.json({ success: true, data: rows });
     } catch (error) {
