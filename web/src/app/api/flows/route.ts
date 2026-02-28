@@ -8,53 +8,62 @@ export async function GET(request: Request) {
 
   let timeFilter = '';
   switch (interval) {
+    case '5m': timeFilter = 'timestamp >= now() - INTERVAL 5 MINUTE'; break;
     case '10m': timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE'; break;
     case '1h': timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; break;
     case '24h': timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR'; break;
     case '1w': timeFilter = 'timestamp >= now() - INTERVAL 1 WEEK'; break;
-    case '1m': timeFilter = 'timestamp >= now() - INTERVAL 1 MONTH'; break;
+    case '1mo': timeFilter = 'timestamp >= now() - INTERVAL 1 MONTH'; break;
     default: timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR';
   }
 
   const privateSubnet = `(
-        match(src_ip, '^10\\.') OR match(src_ip, '^192\\.168\\.') OR match(src_ip, '^172\\.(1[6-9]|2[0-9]|3[01])\\.')
+        match(src_ip, '^10\\\\.') OR match(src_ip, '^192\\\\.168\\\\.') OR match(src_ip, '^172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.')
     )`;
   const privateDst = `(
-        match(dst_ip, '^10\\.') OR match(dst_ip, '^192\\.168\\.') OR match(dst_ip, '^172\\.(1[6-9]|2[0-9]|3[01])\\.')
+        match(dst_ip, '^10\\\\.') OR match(dst_ip, '^192\\\\.168\\\\.') OR match(dst_ip, '^172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.')
     )`;
 
   try {
     let timeSeriesQuery = '';
-    if (interval === '1w' || interval === '1m' || interval === '24h') {
+    if (interval === '1w' || interval === '1mo' || interval === '24h') {
       timeSeriesQuery = `
               SELECT hour AS time, sumMerge(bytes_sum) AS total_bytes
               FROM flows_1h_mv
               WHERE hour >= now() - INTERVAL ${interval === '24h' ? '24 HOUR' : interval === '1w' ? '1 WEEK' : '1 MONTH'}
               GROUP BY time ORDER BY time ASC`;
-    } else {
+    } else if (interval === '10m' || interval === '1h') {
       timeSeriesQuery = `
               SELECT minute AS time, sumMerge(bytes_sum) AS total_bytes
               FROM flows_1m_mv
               WHERE minute >= now() - INTERVAL ${interval === '10m' ? '10 MINUTE' : '1 HOUR'}
               GROUP BY time ORDER BY time ASC`;
+    } else { // 5m Live Mode
+      timeSeriesQuery = `
+              SELECT toStartOfInterval(timestamp, INTERVAL 5 SECOND) AS time, SUM(bytes) AS total_bytes
+              FROM flows
+              WHERE timestamp >= now() - INTERVAL 5 MINUTE
+              GROUP BY time ORDER BY time ASC`;
     }
+
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
 
     const topDestinationsQuery = `
           SELECT dst_ip AS ip, SUM(bytes) as total_bytes
           FROM flows WHERE ${timeFilter}
-          GROUP BY ip ORDER BY total_bytes DESC LIMIT 10`;
+          GROUP BY ip ORDER BY total_bytes DESC LIMIT ${limit}`;
 
     const topSourcesQuery = `
           SELECT src_ip AS ip, SUM(bytes) as total_bytes
           FROM flows WHERE ${timeFilter}
-          GROUP BY ip ORDER BY total_bytes DESC LIMIT 10`;
+          GROUP BY ip ORDER BY total_bytes DESC LIMIT ${limit}`;
 
     const topPortsQuery = `
           SELECT
             multiIf(protocol = 6, concat('TCP ', toString(dst_port)), protocol = 17, concat('UDP ', toString(dst_port)), protocol = 1, concat('ICMP ', toString(dst_port)), concat('Other ', toString(dst_port))) AS port,
             SUM(bytes) as total_bytes
           FROM flows WHERE ${timeFilter}
-          GROUP BY port ORDER BY total_bytes DESC LIMIT 10`;
+          GROUP BY port ORDER BY total_bytes DESC LIMIT ${limit}`;
 
     const protocolBreakdownQuery = `
           SELECT
@@ -66,7 +75,7 @@ export async function GET(request: Request) {
     const trafficDirectionQuery = `
           SELECT
             sumIf(bytes, ${privateSubnet} AND NOT ${privateDst}) AS outbound_bytes,
-            sumIf(bytes, NOT ${privateSubnet} AND ${privateDst}) AS inbound_bytes,
+            sumIf(bytes, NOT ${privateSubnet}) AS inbound_bytes,
             sumIf(bytes, ${privateSubnet} AND ${privateDst}) AS internal_bytes
           FROM flows WHERE ${timeFilter}`;
 

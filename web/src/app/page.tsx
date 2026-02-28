@@ -14,7 +14,7 @@ const TopPortsChart = dynamic(() => import('@/components/charts/TopPortsChart'),
 const ProtocolChart = dynamic(() => import('@/components/charts/ProtocolChart'), { ssr: false });
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
 
-type IntervalType = '10m' | '1h' | '24h' | '1w' | '1m';
+type IntervalType = '10m' | '1h' | '24h' | '1w' | '1mo';
 
 export default function Dashboard() {
   const { timezone } = useTimezone();
@@ -30,7 +30,7 @@ export default function Dashboard() {
     { label: '1 Hour', value: '1h' },
     { label: '24 Hours', value: '24h' },
     { label: '1 Week', value: '1w' },
-    { label: '1 Month', value: '1m' },
+    { label: '1 Month', value: '1mo' },
   ];
 
   useEffect(() => {
@@ -40,8 +40,8 @@ export default function Dashboard() {
     async function fetchData() {
       setLoading(true);
       try {
-        // If Live, fetch the last 10m to show recent spikes
-        const queryInterval = interval === 'Live' ? '10m' : interval;
+        // If Live, fetch the last 5m to show real-time spikes in 5s buckets
+        const queryInterval = interval === 'Live' ? '5m' : interval;
         const [flowsRes, recentRes] = await Promise.all([
           fetch(`/api/flows?interval=${queryInterval}`),
           fetch('/api/flows/recent'),
@@ -65,7 +65,7 @@ export default function Dashboard() {
 
     // Setup polling
     if (interval === 'Live') {
-      timer = window.setInterval(fetchData, 3000); // 3 seconds for Live
+      timer = window.setInterval(fetchData, 1000); // 1 second for Live
     } else {
       timer = window.setInterval(fetchData, 60000); // 60 seconds otherwise
     }
@@ -95,8 +95,8 @@ export default function Dashboard() {
         {/* Header Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <StatCard title="Total Bandwidth" value={loading ? '...' : formatBytes(data?.timeSeries?.reduce((a: number, c: any) => a + c.total_bytes, 0) || 0)} icon={<ArrowRightLeft />} color="blue" span={2} />
-          <StatCard title="Active IPs" value={loading ? '...' : ((data?.topSources?.length || 0) + (data?.topDestinations?.length || 0)).toString()} icon={<Globe />} color="emerald" />
-          <StatCard title="Active Services" value={loading ? '...' : (data?.topPorts?.length || 0).toString()} icon={<Server />} color="purple" />
+          <StatCard title="Active IPs" value={loading ? '...' : ((data?.topSources?.length || 0) + (data?.topDestinations?.length || 0)).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} />
+          <StatCard title="Active Services" value={loading ? '...' : (data?.topPorts?.length || 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} />
           <StatCard title="Outbound" value={loading ? '...' : formatBytes(Number(dir.outbound_bytes) || 0)} icon={<ArrowUpRight />} color="orange" />
           <StatCard title="Inbound" value={loading ? '...' : formatBytes(Number(dir.inbound_bytes) || 0)} icon={<ArrowDownLeft />} color="teal" />
         </div>
@@ -154,7 +154,7 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ title, value, icon, color, span = 1 }: { title: string, value: string, icon: React.ReactNode, color: string, span?: number }) {
+function StatCard({ title, value, icon, color, span = 1, href }: { title: string, value: string, icon: React.ReactNode, color: string, span?: number, href?: string }) {
   const colorMap: Record<string, string> = {
     blue: 'from-blue-500/20 to-blue-500/0 border-blue-500/30 text-blue-400',
     emerald: 'from-emerald-500/20 to-emerald-500/0 border-emerald-500/30 text-emerald-400',
@@ -162,8 +162,10 @@ function StatCard({ title, value, icon, color, span = 1 }: { title: string, valu
     orange: 'from-orange-500/20 to-orange-500/0 border-orange-500/30 text-orange-400',
     teal: 'from-teal-500/20 to-teal-500/0 border-teal-500/30 text-teal-400',
   };
-  return (
-    <div className={`bg-gradient-to-br ${colorMap[color] || colorMap.blue} bg-gray-900/80 border rounded-xl p-5 backdrop-blur-md relative overflow-hidden group hover:shadow-lg transition-all ${span === 2 ? 'col-span-2' : ''}`}>
+  const innerClass = `bg-gradient-to-br ${colorMap[color] || colorMap.blue} bg-gray-900/80 border rounded-xl p-5 backdrop-blur-md relative overflow-hidden group hover:shadow-lg transition-all ${!href && span === 2 ? 'col-span-2' : ''} ${href ? 'cursor-pointer hover:border-gray-500/50' : ''} h-full`;
+
+  const content = (
+    <div className={innerClass}>
       <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-current opacity-5 group-hover:opacity-10 transition-opacity blur-2xl" />
       <div className="flex items-center justify-between">
         <div>
@@ -174,6 +176,12 @@ function StatCard({ title, value, icon, color, span = 1 }: { title: string, valu
       </div>
     </div>
   );
+
+  return href ? (
+    <Link href={href} className={`block ${span === 2 ? 'col-span-2' : ''}`}>
+      {content}
+    </Link>
+  ) : content;
 }
 
 function formatBytes(bytes: number, decimals = 2) {
