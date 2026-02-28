@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
+import { applyAliases } from '@/lib/aliases';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -99,6 +100,10 @@ export async function GET(request: Request) {
       .map(([port, total_bytes]) => ({ port, total_bytes }))
       .sort((a, b) => b.total_bytes - a.total_bytes)
       .slice(0, 10);
+
+    // Apply Admin IP Aliases
+    await applyAliases(topDestinations);
+    await applyAliases(topSources);
 
     return NextResponse.json({
       success: true,

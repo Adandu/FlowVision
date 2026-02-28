@@ -1,8 +1,37 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
+import { applyAliases } from '@/lib/aliases';
 
-export async function GET(_req: Request, { params }: { params: Promise<{ ip: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ ip: string }> }) {
     const { ip } = await params;
+    const url = new URL(req.url);
+    const interval = url.searchParams.get('interval') || '24h';
+
+    let timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
+    let timeGroup = 'toStartOfMinute(timestamp)';
+
+    switch (interval) {
+        case '10m':
+            timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE';
+            timeGroup = 'toStartOfMinute(timestamp)';
+            break;
+        case '1h':
+            timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR';
+            timeGroup = 'toStartOfMinute(timestamp)';
+            break;
+        case '24h':
+            timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
+            timeGroup = 'toStartOfHour(timestamp)';
+            break;
+        case '7d':
+            timeFilter = 'timestamp >= now() - INTERVAL 7 DAY';
+            timeGroup = 'toStartOfHour(timestamp)';
+            break;
+        case '30d':
+            timeFilter = 'timestamp >= now() - INTERVAL 30 DAY';
+            timeGroup = 'toStartOfDay(timestamp)';
+            break;
+    }
 
     try {
         const [
@@ -25,30 +54,30 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ip: str
                         min(timestamp) AS first_seen,
                         max(timestamp) AS last_seen
                     FROM flows
-                    WHERE src_ip = {ip:String} OR dst_ip = {ip:String}
+                    WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
             }).then(r => r.json()),
 
-            // Bandwidth timeline as source (last 24h, by minute)
+            // Bandwidth timeline as source
             clickhouse.query({
                 query: `
-                    SELECT toStartOfMinute(timestamp) AS time, SUM(bytes) AS bytes
+                    SELECT ${timeGroup} AS time, SUM(bytes) AS bytes
                     FROM flows
-                    WHERE src_ip = {ip:String} AND timestamp >= now() - INTERVAL 24 HOUR
+                    WHERE src_ip = {ip:String} AND ${timeFilter}
                     GROUP BY time ORDER BY time ASC
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
             }).then(r => r.json()),
 
-            // Bandwidth timeline as destination (last 24h, by minute)
+            // Bandwidth timeline as destination
             clickhouse.query({
                 query: `
-                    SELECT toStartOfMinute(timestamp) AS time, SUM(bytes) AS bytes
+                    SELECT ${timeGroup} AS time, SUM(bytes) AS bytes
                     FROM flows
-                    WHERE dst_ip = {ip:String} AND timestamp >= now() - INTERVAL 24 HOUR
+                    WHERE dst_ip = {ip:String} AND ${timeFilter}
                     GROUP BY time ORDER BY time ASC
                 `,
                 query_params: { ip },
@@ -60,7 +89,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ip: str
                 query: `
                     SELECT dst_ip AS peer, SUM(bytes) AS total_bytes, count() AS flow_count
                     FROM flows
-                    WHERE src_ip = {ip:String} AND timestamp >= now() - INTERVAL 7 DAY
+                    WHERE src_ip = {ip:String} AND ${timeFilter}
                     GROUP BY peer ORDER BY total_bytes DESC LIMIT 10
                 `,
                 query_params: { ip },
@@ -72,7 +101,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ip: str
                 query: `
                     SELECT src_ip AS peer, SUM(bytes) AS total_bytes, count() AS flow_count
                     FROM flows
-                    WHERE dst_ip = {ip:String} AND timestamp >= now() - INTERVAL 7 DAY
+                    WHERE dst_ip = {ip:String} AND ${timeFilter}
                     GROUP BY peer ORDER BY total_bytes DESC LIMIT 10
                 `,
                 query_params: { ip },
@@ -88,7 +117,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ip: str
                         SUM(bytes) AS total_bytes,
                         count() AS flow_count
                     FROM flows
-                    WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND timestamp >= now() - INTERVAL 7 DAY
+                    WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
                     GROUP BY proto, port ORDER BY total_bytes DESC LIMIT 15
                 `,
                 query_params: { ip },
@@ -103,13 +132,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ip: str
                         multiIf(protocol = 6, 'TCP', protocol = 17, 'UDP', protocol = 1, 'ICMP', 'Other') AS protocol,
                         bytes, packets
                     FROM flows
-                    WHERE src_ip = {ip:String} OR dst_ip = {ip:String}
+                    WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
                     ORDER BY timestamp DESC LIMIT 100
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
             }).then(r => r.json()),
         ]);
+
+        await applyAliases(topPeersAsSrcRows);
+        await applyAliases(topPeersAsDstRows);
+        await applyAliases(recentFlowsRows);
 
         return NextResponse.json({
             success: true,

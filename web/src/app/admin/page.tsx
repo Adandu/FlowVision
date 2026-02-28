@@ -18,10 +18,11 @@ export default function AdminPage() {
     }, [router]);
 
     const sections = [
-        { href: '/admin/users', icon: <Users className="w-6 h-6 text-blue-400" />, title: 'Users & Groups', desc: 'Manage user accounts, roles, and access groups' },
-        { href: '/admin/retention', icon: <Database className="w-6 h-6 text-emerald-400" />, title: 'Data Retention', desc: 'Configure how long flow data is kept in ClickHouse' },
-        { href: '/admin/notifications', icon: <Bell className="w-6 h-6 text-amber-400" />, title: 'Notification Channels', desc: 'Configure Discord, NTFY, Slack, Telegram, Email, and more' },
-        { href: '/admin/oidc', icon: <Globe className="w-6 h-6 text-purple-400" />, title: 'OIDC / SSO', desc: 'Configure Authelia, Authentik, or any OIDC provider' },
+        { href: '/admin/users', icon: <Users className="w-6 h-6 text-emerald-400" />, title: 'Users & Auth', desc: 'Manage user accounts, roles, and access groups' },
+        { href: '/admin/aliases', icon: <Server className="w-6 h-6 text-blue-400" />, title: 'IP Aliases', desc: 'Assign custom names to private network IPs' },
+        { href: '/admin/metrics', icon: <Globe className="w-6 h-6 text-pink-400" />, title: 'System Metrics', desc: 'Live CPU, RAM and Database Storage telemetry' },
+        { href: '/admin/tasks', icon: <Database className="w-6 h-6 text-amber-400" />, title: 'Scheduled Tasks', desc: 'Database maintenance, cleanup and optimizations' },
+        { href: '/admin/retention', icon: <Settings className="w-6 h-6 text-slate-400" />, title: 'Data Retention', desc: 'Configure how long flow data is kept in ClickHouse' },
     ];
 
     if (!user) return null;
