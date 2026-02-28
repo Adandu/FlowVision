@@ -54,8 +54,8 @@ export default function Navbar() {
                         <Link href="/flow-log" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <List className="w-4 h-4" /> Flow Log
                         </Link>
-                        <Link href="/flow-diagram" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
-                            <Network className="w-4 h-4" /> Flow Diagram
+                        <Link href="/ip" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <Globe className="w-4 h-4" /> IP Search
                         </Link>
                         <Link href="/alerts" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <Bell className="w-4 h-4" /> Alerts
@@ -153,8 +153,8 @@ export default function Navbar() {
                         <Link href="/flow-log" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <List className="w-5 h-5 text-gray-400" /> Flow Log
                         </Link>
-                        <Link href="/flow-diagram" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
-                            <Network className="w-5 h-5 text-gray-400" /> Flow Diagram
+                        <Link href="/ip" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <Globe className="w-5 h-5 text-gray-400" /> IP Search
                         </Link>
                         <Link href="/alerts" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <Bell className="w-5 h-5 text-gray-400" /> Alerts
