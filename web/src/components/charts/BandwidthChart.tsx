@@ -104,7 +104,8 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                     { offset: 0, color: 'rgba(59, 130, 246, 0.5)' },
                     { offset: 1, color: 'rgba(59, 130, 246, 0.0)' }
-                ])
+                ]),
+                origin: 'start'
             },
             lineStyle: { color: '#3B82F6', width: 2 },
             data: shiftedData,

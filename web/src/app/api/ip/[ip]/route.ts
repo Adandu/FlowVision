@@ -158,6 +158,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
         return NextResponse.json({
             success: true,
             data: {
+                requested_ip: user ? ip : obfuscateIp(ip),
                 summary: summaryRows[0] || null,
                 timelineAsSrc: timelineAsSrcRows,
                 timelineAsDst: timelineAsDstRows,
