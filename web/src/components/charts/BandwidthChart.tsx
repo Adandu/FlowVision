@@ -11,11 +11,12 @@ interface Props {
 }
 
 function formatBytes(bytes: number) {
-    if (!bytes || bytes === 0) return '0 B';
+    if (!bytes || bytes <= 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    const i = Math.max(0, Math.floor(Math.log(bytes) / Math.log(k)));
+    const validIndex = Math.min(i, sizes.length - 1);
+    return parseFloat((bytes / Math.pow(k, validIndex)).toFixed(2)) + ' ' + sizes[validIndex];
 }
 
 export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes = 0, interval }: Props) {
@@ -82,15 +83,17 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
         },
         yAxis: {
             type: 'value',
+            minInterval: 1, // Prevent fractional byte splits (like 0.5 B)
             axisLine: { lineStyle: { color: '#4B5563' } },
             axisLabel: {
                 color: '#9CA3AF',
                 formatter: (value: number) => {
-                    if (value === 0) return '0 B';
+                    if (value <= 0) return '0 B';
                     const k = 1024;
                     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-                    const i = Math.floor(Math.log(value) / Math.log(k));
-                    return parseFloat((value / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+                    const i = Math.max(0, Math.floor(Math.log(value) / Math.log(k)));
+                    const validIndex = Math.min(i, sizes.length - 1);
+                    return parseFloat((value / Math.pow(k, validIndex)).toFixed(1)) + ' ' + sizes[validIndex];
                 }
             },
             splitLine: { lineStyle: { color: '#374151' } }

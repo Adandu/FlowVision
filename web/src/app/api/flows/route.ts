@@ -30,28 +30,44 @@ export async function GET(request: Request) {
     let timeSeriesQuery = '';
     if (interval === '1w' || interval === '1mo' || interval === '24h') {
       timeSeriesQuery = `
-              SELECT hour AS time, sumMerge(bytes_sum) AS total_bytes
+              SELECT hour AS time, toUInt64(sumMerge(bytes_sum)) AS total_bytes
               FROM flows_1h_mv
               WHERE hour >= now() - INTERVAL ${interval === '24h' ? '24 HOUR' : interval === '1w' ? '1 WEEK' : '1 MONTH'}
-              GROUP BY time ORDER BY time ASC`;
+              GROUP BY time ORDER BY time ASC
+              WITH FILL
+                FROM toStartOfHour(now() - INTERVAL ${interval === '24h' ? '24 HOUR' : interval === '1w' ? '1 WEEK' : '1 MONTH'})
+                TO toStartOfHour(now())
+                STEP 3600`;
     } else if (interval === '10m' || interval === '1h') {
       timeSeriesQuery = `
-              SELECT minute AS time, sumMerge(bytes_sum) AS total_bytes
+              SELECT minute AS time, toUInt64(sumMerge(bytes_sum)) AS total_bytes
               FROM flows_1m_mv
               WHERE minute >= now() - INTERVAL ${interval === '10m' ? '10 MINUTE' : '1 HOUR'}
-              GROUP BY time ORDER BY time ASC`;
+              GROUP BY time ORDER BY time ASC
+              WITH FILL
+                FROM toStartOfMinute(now() - INTERVAL ${interval === '10m' ? '10 MINUTE' : '1 HOUR'})
+                TO toStartOfMinute(now())
+                STEP 60`;
     } else if (interval === '5m') { // Used by Active Pages if Live
       timeSeriesQuery = `
-              SELECT toStartOfInterval(timestamp, INTERVAL 5 SECOND) AS time, SUM(bytes) AS total_bytes
+              SELECT toStartOfInterval(timestamp, INTERVAL 5 SECOND) AS time, toUInt64(SUM(bytes)) AS total_bytes
               FROM flows
               WHERE timestamp >= now() - INTERVAL 5 MINUTE
-              GROUP BY time ORDER BY time ASC`;
+              GROUP BY time ORDER BY time ASC
+              WITH FILL
+                FROM toStartOfInterval(now() - INTERVAL 5 MINUTE, INTERVAL 5 SECOND)
+                TO toStartOfInterval(now(), INTERVAL 5 SECOND)
+                STEP 5`;
     } else { // 1m Live Mode Dashboard
       timeSeriesQuery = `
-              SELECT toStartOfInterval(timestamp, INTERVAL 1 SECOND) AS time, SUM(bytes) AS total_bytes
+              SELECT toStartOfInterval(timestamp, INTERVAL 1 SECOND) AS time, toUInt64(SUM(bytes)) AS total_bytes
               FROM flows
               WHERE timestamp >= now() - INTERVAL 1 MINUTE
-              GROUP BY time ORDER BY time ASC`;
+              GROUP BY time ORDER BY time ASC
+              WITH FILL
+                FROM toStartOfInterval(now() - INTERVAL 1 MINUTE, INTERVAL 1 SECOND)
+                TO toStartOfInterval(now(), INTERVAL 1 SECOND)
+                STEP 1`;
     }
 
     const limit = parseInt(searchParams.get('limit') || '10', 10);
