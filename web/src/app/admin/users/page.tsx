@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Users, PlusCircle, Trash2, ChevronLeft, UserCheck, UserX, Crown } from 'lucide-react';
+import { Users, PlusCircle, Trash2, ChevronLeft, UserCheck, UserX, Crown, Settings } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
 
@@ -11,37 +11,74 @@ export default function AdminUsersPage() {
     const router = useRouter();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [guestMode, setGuestMode] = useState(false);
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ username: '', email: '', password: '', display_name: '', role: 'viewer' });
 
-    const load = () => {
-        fetch('/api/admin/users').then(r => r.json()).then(j => { if (j.success) setUsers(j.data); }).finally(() => setLoading(false));
+    const loadUsersAndSettings = async () => {
+        setLoading(true);
+        try {
+            const [usersRes, settingsRes] = await Promise.all([
+                fetch('/api/admin/users').then(r => r.json()),
+                fetch('/api/admin/settings').then(r => r.json())
+            ]);
+
+            if (usersRes.success) {
+                setUsers(usersRes.data);
+            }
+            if (settingsRes.success) {
+                setGuestMode(settingsRes.data?.guest_mode_enabled === '1');
+            }
+        } catch (error) {
+            console.error("Failed to load data:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
         fetch('/api/auth/me').then(r => r.json()).then(j => {
             if (!j.success || j.user?.role !== 'admin') { router.replace('/'); return; }
-            load();
+            loadUsersAndSettings();
         });
     }, [router]);
+
+    const toggleGuestMode = async () => {
+        setSaving(true);
+        const newValue = !guestMode;
+        setGuestMode(newValue);
+        try {
+            await fetch('/api/admin/settings', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ guest_mode_enabled: newValue ? '1' : '0' })
+            });
+        } catch (error) {
+            console.error("Failed to toggle guest mode:", error);
+            setGuestMode(!newValue); // Revert if API call fails
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
         setShowForm(false);
         setForm({ username: '', email: '', password: '', display_name: '', role: 'viewer' });
-        load();
+        loadUsersAndSettings();
     };
 
     const handleDelete = async (id: string, username: string) => {
         if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
         await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE' });
-        load();
+        loadUsersAndSettings();
     };
 
     const handleToggleActive = async (user: any) => {
         await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, role: user.role, is_active: user.is_active ? 0 : 1 }) });
-        load();
+        loadUsersAndSettings();
     };
 
     return (
@@ -92,6 +129,25 @@ export default function AdminUsersPage() {
                             </div>
                         </form>
                     )}
+
+                    <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
+                        <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2 mb-6">
+                            <Settings className="w-5 h-5 text-purple-400" /> Global Settings
+                        </h2>
+
+                        <div className="flex items-center justify-between p-4 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                            <div>
+                                <h3 className="font-semibold text-gray-200">Public Guest Mode</h3>
+                                <p className="text-sm text-gray-500 mt-1">If enabled, anyone can view the dashboard without logging in. IP addresses will be obfuscated to protect privacy.</p>
+                            </div>
+                            <button
+                                onClick={toggleGuestMode}
+                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${guestMode ? 'bg-emerald-500' : 'bg-gray-700'}`}
+                            >
+                                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${guestMode ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                        </div>
+                    </div>
 
                     <div className="bg-gray-900/50 border border-gray-800 rounded-xl overflow-hidden">
                         {loading ? <p className="p-6 text-gray-500 animate-pulse">Loading…</p> : (

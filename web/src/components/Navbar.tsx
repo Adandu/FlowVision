@@ -60,11 +60,6 @@ export default function Navbar() {
                         <Link href="/alerts" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <Bell className="w-4 h-4" /> Alerts
                         </Link>
-                        {user?.role === 'admin' && (
-                            <Link href="/admin" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 transition-all">
-                                <Settings className="w-4 h-4" /> Admin
-                            </Link>
-                        )}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -134,6 +129,12 @@ export default function Navbar() {
                             </div>
                         )}
 
+                        {!user && (
+                            <Link href="/login" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 border border-emerald-500/30 transition-all">
+                                <LogOut className="w-4 h-4 rotate-180" /> Login
+                            </Link>
+                        )}
+
                         {/* Mobile Hamburger Toggle */}
                         <div className="md:hidden ml-2 flex items-center">
                             <button onClick={() => { setMobileOpen(!mobileOpen); setTzOpen(false); setUserOpen(false); }}
@@ -159,11 +160,6 @@ export default function Navbar() {
                         <Link href="/alerts" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <Bell className="w-5 h-5 text-gray-400" /> Alerts
                         </Link>
-                        {user?.role === 'admin' && (
-                            <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 transition-all">
-                                <Settings className="w-5 h-5 text-amber-500/80" /> Admin
-                            </Link>
-                        )}
                     </div>
                 )}
             </div>

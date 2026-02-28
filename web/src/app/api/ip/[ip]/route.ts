@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
+import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 
 export async function GET(req: Request, { params }: { params: Promise<{ ip: string }> }) {
     const { ip } = await params;
@@ -140,25 +141,34 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             }).then(r => r.json()),
         ]);
 
-        await applyAliases(topPeersAsSrcRows);
-        await applyAliases(topPeersAsDstRows);
-        await applyAliases(recentFlowsRows);
+        const user = await getCurrentUser();
+        if (!user) {
+            topPeersAsSrcRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
+            topPeersAsDstRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
+            recentFlowsRows.forEach((r: any) => {
+                r.src_ip = obfuscateIp(r.src_ip);
+                r.dst_ip = obfuscateIp(r.dst_ip);
+            });
+        } else {
+            await applyAliases(topPeersAsSrcRows);
+            await applyAliases(topPeersAsDstRows);
+            await applyAliases(recentFlowsRows);
+        }
 
         return NextResponse.json({
             success: true,
             data: {
-                ip,
-                summary: summaryRows[0] || {},
+                summary: summaryRows[0] || null,
                 timelineAsSrc: timelineAsSrcRows,
                 timelineAsDst: timelineAsDstRows,
                 topPeersAsSrc: topPeersAsSrcRows,
                 topPeersAsDst: topPeersAsDstRows,
                 topPorts: topPortsRows,
                 recentFlows: recentFlowsRows,
-            },
+            }
         });
     } catch (error) {
-        console.error('IP detail query error:', error);
+        console.error('IP details error:', error);
         return NextResponse.json({ success: false, error: 'Database query failed' }, { status: 500 });
     }
 }

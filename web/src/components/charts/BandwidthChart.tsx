@@ -7,6 +7,7 @@ interface Props {
     data: { time: string; total_bytes: number }[];
     timezone?: string;
     tzOffsetMinutes?: number;
+    interval?: string;
 }
 
 function formatBytes(bytes: number) {
@@ -17,12 +18,28 @@ function formatBytes(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes = 0 }: Props) {
+export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes = 0, interval }: Props) {
     // Shift timestamps by timezone offset so ECharts renders them in local time
     const shiftedData = data.map(item => {
         const utcMs = new Date(item.time).getTime();
         return [utcMs + tzOffsetMinutes * 60000, item.total_bytes];
     });
+
+    let min: number | undefined;
+    let max: number | undefined;
+
+    if (interval) {
+        const now = Date.now() + tzOffsetMinutes * 60000;
+        max = now;
+        switch (interval) {
+            case 'Live': min = now - 60 * 1000; break;
+            case '10m': min = now - 10 * 60 * 1000; break;
+            case '1h': min = now - 60 * 60 * 1000; break;
+            case '24h': min = now - 24 * 60 * 60 * 1000; break;
+            case '1w': min = now - 7 * 24 * 60 * 60 * 1000; break;
+            case '1mo': min = now - 30 * 24 * 60 * 60 * 1000; break;
+        }
+    }
 
     const options = {
         tooltip: {
@@ -48,6 +65,8 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
         xAxis: {
             type: 'time',
             boundaryGap: false,
+            min: min,
+            max: max,
             axisLine: { lineStyle: { color: '#4B5563' } },
             axisLabel: {
                 color: '#9CA3AF',
