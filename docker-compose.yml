@@ -2,10 +2,7 @@ version: '3.8'
 
 services:
   flowvision:
-    image: flowvision:latest
-    build:
-      context: .
-      dockerfile: Dockerfile.all-in-one
+    image: ghcr.io/adandu/flowvision:latest
     container_name: flowvision
     restart: unless-stopped
     ports:
