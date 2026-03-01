@@ -1,0 +1,25 @@
+name: GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+      - "v*"
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all history for comprehensive release notes
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true # GitHub will auto-generate the changelog based on pull requests/commits

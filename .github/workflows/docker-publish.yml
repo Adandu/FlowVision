@@ -5,6 +5,9 @@ on:
     branches:
       - main
       - master
+    tags:
+      - "v*.*.*"
+      - "v*"
   # Allow manual trigger
   workflow_dispatch:
 
@@ -34,13 +37,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: type=raw,value=latest
-
       # Convert the image name to lowercase before building, as Docker images must be lowercase
       - name: Downcase IMAGE_NAME
         run: |
@@ -48,11 +44,22 @@ jobs:
         env:
           IMAGE_NAME: '${{ env.IMAGE_NAME }}'
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWERCASE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile.all-in-one
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWERCASE }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
