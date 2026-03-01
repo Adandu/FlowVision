@@ -61,8 +61,15 @@ if [ "$USER_COUNT" = "0" ]; then
 fi
 
 # ─── Kill the background ClickHouse (supervisord will manage it properly) ─────
-pkill clickhouse-server 2>/dev/null || true
-sleep 2
+echo "[entrypoint] Stopping background ClickHouse..."
+pkill -TERM clickhouse-server 2>/dev/null || true
+
+# Wait until the process is actually gone (max 30 seconds)
+max_wait=30
+while pgrep clickhouse-server > /dev/null && [ $max_wait -gt 0 ]; do
+    sleep 1
+    max_wait=$((max_wait-1))
+done
 
 echo "[entrypoint] Handing off to supervisord..."
 exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
