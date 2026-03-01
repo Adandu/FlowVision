@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 // Simple in-memory cache to respect ip-api.com rate limits (45 req/min free tier)
 const geoCache = new Map<string, { data: any; ts: number }>();
-const CACHE_TTL = 3600 * 1000; // 1 hour
+const CACHE_TTL = 24 * 3600 * 1000; // 24 hours
 
 export async function GET(_req: Request, { params }: { params: Promise<{ ip: string }> }) {
     const { ip } = await params;
