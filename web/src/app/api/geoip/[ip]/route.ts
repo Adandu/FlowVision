@@ -16,6 +16,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ip: str
         });
     }
 
+    // Fast-path for obfuscated IPs (Guest Mode / Privacy Mode)
+    if (ip.startsWith('***.')) {
+        return NextResponse.json({
+            success: true,
+            data: { private: true, country: 'Hidden IP', countryCode: 'UN', isp: 'Hidden', city: '', flag: '🕵️' }
+        });
+    }
+
     // Return cached result if available
     const cached = geoCache.get(ip);
     if (cached && Date.now() - cached.ts < CACHE_TTL) {
