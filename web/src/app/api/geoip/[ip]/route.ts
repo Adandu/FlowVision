@@ -7,6 +7,15 @@ const CACHE_TTL = 24 * 3600 * 1000; // 24 hours
 export async function GET(_req: Request, { params }: { params: Promise<{ ip: string }> }) {
     const { ip } = await params;
 
+    // Fast-path for private/internal IPs
+    const isPrivateIP = /^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|127\.|169\.254\.|::1|fc00:|fe80:)/.test(ip);
+    if (isPrivateIP) {
+        return NextResponse.json({
+            success: true,
+            data: { private: true, country: 'Private Network', countryCode: 'LAN', isp: 'Local', city: '', flag: '🏠' }
+        });
+    }
+
     // Return cached result if available
     const cached = geoCache.get(ip);
     if (cached && Date.now() - cached.ts < CACHE_TTL) {
