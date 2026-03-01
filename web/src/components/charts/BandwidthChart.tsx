@@ -20,17 +20,19 @@ function formatBytes(bytes: number) {
 }
 
 export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes = 0, interval }: Props) {
-    // Shift timestamps by timezone offset so ECharts renders them in local time
+    // Convert ClickHouse UTC strings to true Epoch milliseconds
     const shiftedData = data.map(item => {
-        const utcMs = new Date(item.time).getTime();
-        return [utcMs + tzOffsetMinutes * 60000, item.total_bytes];
+        // Ensure string is parsed as UTC by appending 'Z'
+        const timeStr = item.time.includes('Z') ? item.time : item.time + 'Z';
+        const utcMs = new Date(timeStr).getTime();
+        return [utcMs, item.total_bytes];
     });
 
     let min: number | undefined;
     let max: number | undefined;
 
     if (interval) {
-        const now = Date.now() + tzOffsetMinutes * 60000;
+        const now = Date.now();
         max = now;
         switch (interval) {
             case 'Live': min = now - 60 * 1000; break;
@@ -48,7 +50,7 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
             axisPointer: { type: 'cross' },
             formatter: (params: any) => {
                 const [ts, val] = params[0].value;
-                const localDate = new Date(ts - tzOffsetMinutes * 60000);
+                const localDate = new Date(ts);
                 const timeStr = new Intl.DateTimeFormat('en-GB', {
                     timeZone: timezone,
                     hour: '2-digit', minute: '2-digit', second: '2-digit',
@@ -72,7 +74,7 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
             axisLabel: {
                 color: '#9CA3AF',
                 formatter: (value: number) => {
-                    const d = new Date(value - tzOffsetMinutes * 60000);
+                    const d = new Date(value);
                     return new Intl.DateTimeFormat('en-GB', {
                         timeZone: timezone,
                         hour: '2-digit', minute: '2-digit',
@@ -103,6 +105,7 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
             type: 'line',
             smooth: true,
             symbol: 'none',
+            connectNulls: true, // Connect lines across gaps
             areaStyle: {
                 color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                     { offset: 0, color: 'rgba(59, 130, 246, 0.5)' },
@@ -111,7 +114,7 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
                 origin: 'start'
             },
             lineStyle: { color: '#3B82F6', width: 2 },
-            data: shiftedData,
+            data: shiftedData, // Array of [timestamp, value] pairs
         }]
     };
 
