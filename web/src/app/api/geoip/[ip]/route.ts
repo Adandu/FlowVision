@@ -14,45 +14,79 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ip: str
     }
 
     try {
-        const res = await fetch(`https://ipinfo.io/${ip}/json`, { next: { revalidate: 3600 } });
+        let data: any = null;
 
-        if (!res.ok) throw new Error('ipinfo.io request failed');
-
-        const json = await res.json();
-
-        if (json.bogon) {
-            // Private/reserved IPs return 'bogon': true
-            const data = { private: true, country: 'Private Network', countryCode: 'LAN', isp: 'Local', city: '', flag: '🏠' };
-            geoCache.set(ip, { data, ts: Date.now() });
-            return NextResponse.json({ success: true, data });
+        // Try IPInfo first (1000/day limit)
+        try {
+            const ipinfoRes = await fetch(`https://ipinfo.io/${ip}/json`, { next: { revalidate: 3600 } });
+            if (ipinfoRes.ok) {
+                const json = await ipinfoRes.json();
+                if (json.bogon) {
+                    data = { private: true, country: 'Private Network', countryCode: 'LAN', isp: 'Local', city: '', flag: '🏠' };
+                } else {
+                    const latlon = json.loc ? json.loc.split(',') : [0, 0];
+                    data = {
+                        country: json.country || '',
+                        countryCode: json.country || '',
+                        region: json.region || '',
+                        city: json.city || '',
+                        isp: json.org || '',
+                        asn: json.org || '',
+                        org: json.org || '',
+                        lat: parseFloat(latlon[0]),
+                        lon: parseFloat(latlon[1]),
+                        timezone: json.timezone || '',
+                        private: false,
+                    };
+                }
+            }
+        } catch (e) {
+            console.warn(`[GeoIP] ipinfo.io failed for ${ip}`);
         }
 
-        // Add flag emoji using country code
-        const flag = json.country
-            ? String.fromCodePoint(...json.country.toUpperCase().split('').map((c: string) => 0x1F1E6 - 65 + c.charCodeAt(0)))
-            : '🌐';
+        // If IPInfo failed / rate-limited, fallback to ip-api.com (45/minute limit)
+        if (!data) {
+            const ipapiRes = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,regionName,city,lat,lon,timezone,isp,org,as,mobile,proxy,hosting`, { next: { revalidate: 3600 } });
+            if (ipapiRes.ok) {
+                const json = await ipapiRes.json();
+                if (json.status === 'success') {
+                    data = {
+                        country: json.country || '',
+                        countryCode: json.countryCode || '',
+                        region: json.regionName || '',
+                        city: json.city || '',
+                        isp: json.isp || '',
+                        asn: json.as || '',
+                        org: json.org || '',
+                        lat: json.lat || 0,
+                        lon: json.lon || 0,
+                        timezone: json.timezone || '',
+                        private: false,
+                    };
+                }
+            }
+        }
 
-        const latlon = json.loc ? json.loc.split(',') : [0, 0];
+        if (!data) {
+            throw new Error("All GeoIP lookups failed");
+        }
 
-        const data = {
-            country: json.country || '',
-            countryCode: json.country || '',
-            region: json.region || '',
-            city: json.city || '',
-            isp: json.org || '',
-            asn: json.org || '', // ASN is included in the org field in ipinfo.io (e.g., 'AS15169 Google LLC')
-            org: json.org || '',
-            lat: parseFloat(latlon[0]),
-            lon: parseFloat(latlon[1]),
-            timezone: json.timezone || '',
-            flag,
-            private: false,
-        };
+        // Add flag emoji using country code (if not private network)
+        if (!data.private) {
+            data.flag = data.countryCode
+                ? String.fromCodePoint(...data.countryCode.toUpperCase().split('').map((c: string) => 0x1F1E6 - 65 + c.charCodeAt(0)))
+                : '🌐';
+        }
 
         geoCache.set(ip, { data, ts: Date.now() });
         return NextResponse.json({ success: true, data });
+
     } catch (err) {
-        console.error('GeoIP lookup failed:', err);
-        return NextResponse.json({ success: false, error: 'GeoIP lookup failed' }, { status: 500 });
+        console.error(`[GeoIP] Complete lookup failure for ${ip}:`, err);
+        // Serve a safe empty response on failure instead of 500 so the UI doesn't crash
+        return NextResponse.json({
+            success: false,
+            data: { private: false, country: 'Unknown', countryCode: 'UN', city: 'Unknown', isp: 'Unknown', flag: '🌐' }
+        });
     }
 }
