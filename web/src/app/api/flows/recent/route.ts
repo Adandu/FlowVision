@@ -27,7 +27,32 @@ export async function GET(request: Request) {
         }).then(r => r.json());
 
         const user = await getCurrentUser();
-        if (!user) {
+        const isGuest = !user;
+
+        // Collect all IPs we need to lookup
+        const allIps = new Set<string>();
+        rows.forEach((r: any) => {
+            if (r.src_ip) allIps.add(r.src_ip);
+            if (r.dst_ip) allIps.add(r.dst_ip);
+        });
+
+        // Batch GeoIP Lookup (on the backend, before obfuscation)
+        const { batchGeoIPLookup } = await import('@/lib/geoip');
+        const geoDataMap = await batchGeoIPLookup(Array.from(allIps));
+
+        // Enrich payloads with GeoIP
+        rows.forEach((r: any) => {
+            const srcGeo = geoDataMap[r.src_ip];
+            if (srcGeo) {
+                r.src_asn = srcGeo.asn || srcGeo.isp;
+            }
+            const dstGeo = geoDataMap[r.dst_ip];
+            if (dstGeo) {
+                r.dst_asn = dstGeo.asn || dstGeo.isp;
+            }
+        });
+
+        if (isGuest) {
             rows.forEach((r: any) => {
                 r.src_ip = obfuscateIp(r.src_ip);
                 r.dst_ip = obfuscateIp(r.dst_ip);

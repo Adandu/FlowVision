@@ -77,10 +77,11 @@ export function TimezoneProvider({ children }: { children: React.ReactNode }) {
 // ─── Utilities ────────────────────────────────────────────────────────────────
 export function formatTimestamp(value: string | Date | number, timezone: string): string {
     try {
+        let dateVal = typeof value === 'string' && !value.endsWith('Z') && !value.includes('+') ? new Date(value + 'Z') : new Date(value);
         return new Intl.DateTimeFormat('en-GB', {
             timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-        }).format(new Date(value));
+        }).format(dateVal);
     } catch { return String(value); }
 }
 

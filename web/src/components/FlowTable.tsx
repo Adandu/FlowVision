@@ -14,6 +14,8 @@ interface Flow {
     protocol: string;
     bytes: number;
     packets: number;
+    src_asn?: string;
+    dst_asn?: string;
 }
 
 function formatBytes(bytes: number) {
@@ -61,43 +63,6 @@ export default function FlowTable({ flows }: { flows: Flow[] }) {
 
     const page_data = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
     const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
-
-    const [asns, setAsns] = useState<Record<string, string>>({});
-
-    useEffect(() => {
-        const ips = new Set<string>();
-        page_data.forEach(f => {
-            if (!asns[f.src_ip]) ips.add(f.src_ip);
-            if (!asns[f.dst_ip]) ips.add(f.dst_ip);
-        });
-
-        if (ips.size === 0) return;
-
-        const fetchAsns = async () => {
-            const updates: Record<string, string> = {};
-
-            for (const ip of ips) {
-                try {
-                    const res = await fetch(`/api/geoip/${ip}`);
-                    const json = await res.json();
-                    if (json.success && json.data.asn) {
-                        updates[ip] = json.data.asn.replace(/^AS\d+\s+/, '');
-                    } else if (json.success && json.data.isp) {
-                        updates[ip] = json.data.isp;
-                    } else {
-                        updates[ip] = '';
-                    }
-                } catch {
-                    updates[ip] = '';
-                }
-            }
-            if (Object.keys(updates).length > 0) {
-                setAsns(prev => ({ ...prev, ...updates }));
-            }
-        };
-
-        fetchAsns();
-    }, [page_data]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -153,12 +118,12 @@ export default function FlowTable({ flows }: { flows: Flow[] }) {
                                 </td>
                                 <td className="px-4 py-2.5">
                                     <Link href={`/ip/${flow.src_ip}`} className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs">
-                                        {flow.src_ip} {asns[flow.src_ip] ? <span className="text-gray-500 font-sans">({asns[flow.src_ip]})</span> : ''}
+                                        {flow.src_ip} {flow.src_asn ? <span className="text-gray-500 font-sans">({flow.src_asn.replace(/^AS\d+\s+/, '')})</span> : ''}
                                     </Link>
                                 </td>
                                 <td className="px-4 py-2.5">
                                     <Link href={`/ip/${flow.dst_ip}`} className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs">
-                                        {flow.dst_ip} {asns[flow.dst_ip] ? <span className="text-gray-500 font-sans">({asns[flow.dst_ip]})</span> : ''}
+                                        {flow.dst_ip} {flow.dst_asn ? <span className="text-gray-500 font-sans">({flow.dst_asn.replace(/^AS\d+\s+/, '')})</span> : ''}
                                     </Link>
                                 </td>
                                 <td className="px-4 py-2.5">

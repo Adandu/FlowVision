@@ -134,9 +134,45 @@ export async function GET(request: Request) {
       .sort((a, b) => b.total_bytes - a.total_bytes)
       .slice(0, 10);
 
-    // Apply Admin IP Aliases or Obfuscate for Guests
     const user = await getCurrentUser();
-    if (!user) {
+    const isGuest = !user;
+
+    // Collect all IPs we need to lookup
+    const allIps = new Set<string>();
+    topDestinations.forEach((d: any) => allIps.add(d.ip));
+    topSources.forEach((s: any) => allIps.add(s.ip));
+
+    // Batch GeoIP Lookup (on the backend, before obfuscation)
+    const { batchGeoIPLookup } = await import('@/lib/geoip');
+    const geoDataMap = await batchGeoIPLookup(Array.from(allIps));
+
+    // Enrich payloads with GeoIP
+    topDestinations.forEach((d: any) => {
+      const geo = geoDataMap[d.ip];
+      if (geo) {
+        d.country = geo.country;
+        d.flag = geo.flag;
+        d.lat = geo.lat;
+        d.lon = geo.lon;
+        d.asn = geo.asn;
+        d.isp = geo.isp;
+      }
+    });
+
+    topSources.forEach((s: any) => {
+      const geo = geoDataMap[s.ip];
+      if (geo) {
+        s.country = geo.country;
+        s.flag = geo.flag;
+        s.lat = geo.lat;
+        s.lon = geo.lon;
+        s.asn = geo.asn;
+        s.isp = geo.isp;
+      }
+    });
+
+    // Apply Admin IP Aliases or Obfuscate for Guests
+    if (isGuest) {
       topDestinations.forEach((d: any) => d.ip = obfuscateIp(d.ip));
       topSources.forEach((s: any) => s.ip = obfuscateIp(s.ip));
     } else {

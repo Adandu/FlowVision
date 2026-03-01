@@ -12,6 +12,7 @@ const BandwidthChart = dynamic(() => import('@/components/charts/BandwidthChart'
 const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
 const TopPortsChart = dynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
 const ProtocolChart = dynamic(() => import('@/components/charts/ProtocolChart'), { ssr: false });
+const GeoMapChart = dynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
 
 type IntervalType = '10m' | '1h' | '24h' | '1w' | '1mo';
@@ -136,6 +137,17 @@ export default function Dashboard() {
             <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Top Applications</h2>
             {data && <TopPortsChart data={data.topPorts} />}
           </div>
+        </div>
+
+        {/* Global Traffic Map */}
+        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
+          {data && (
+            <GeoMapChart
+              title="Global Traffic Map"
+              data={[...(data.topDestinations || []), ...(data.topSources || [])]}
+              onIpClick={(ip) => router.push(`/ip/${ip}`)}
+            />
+          )}
         </div>
 
         {/* Flow Table */}
