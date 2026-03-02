@@ -5,6 +5,7 @@ import { Activity } from 'lucide-react';
 
 interface Props {
     data: { service: string; total_bytes: number; color: string }[];
+    title?: string;
 }
 
 function formatBytes(bytes: number) {
@@ -15,12 +16,12 @@ function formatBytes(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export default function TopServicesCard({ data }: Props) {
+export default function TopServicesCard({ data, title = "Top 10 Applications" }: Props) {
     if (!data || data.length === 0) {
         return (
             <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl w-full h-96 flex flex-col">
                 <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-emerald-400" /> Top 10 Applications
+                    <Activity className="w-4 h-4 text-emerald-400" /> {title}
                 </h3>
                 <div className="flex-1 flex items-center justify-center">
                     <p className="text-gray-500 text-sm">No specific services detected in this timeframe.</p>
@@ -70,7 +71,7 @@ export default function TopServicesCard({ data }: Props) {
     return (
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl w-full flex flex-col h-full">
             <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-emerald-400" /> Top 10 Applications
+                <Activity className="w-4 h-4 text-emerald-400" /> {title}
             </h3>
             <div className="flex-1 w-full relative">
                 <ReactECharts option={options} style={{ height: '300px', width: '100%' }} />

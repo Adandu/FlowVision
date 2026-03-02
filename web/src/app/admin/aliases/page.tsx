@@ -38,6 +38,13 @@ export default function AdminAliasesPage() {
 
         if (!newIp || !newAlias) return;
 
+        // Basic IPv4 / IPv6 validation
+        const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4})$/;
+        if (!ipRegex.test(newIp)) {
+            setError('Please enter a valid IPv4 or IPv6 address.');
+            return;
+        }
+
         try {
             const res = await fetch('/api/admin/aliases', {
                 method: 'POST',
@@ -108,7 +115,7 @@ export default function AdminAliasesPage() {
                                     <label className="block text-xs text-gray-500 font-medium mb-1">IP Address</label>
                                     <input
                                         type="text"
-                                        placeholder="192.168.200.200"
+                                        placeholder="192.168.1.1"
                                         value={newIp}
                                         onChange={e => setNewIp(e.target.value)}
                                         className="w-full bg-gray-800 border-gray-700 text-gray-200 rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -118,7 +125,7 @@ export default function AdminAliasesPage() {
                                     <label className="block text-xs text-gray-500 font-medium mb-1">Custom Name</label>
                                     <input
                                         type="text"
-                                        placeholder="MasterChief"
+                                        placeholder="MyServer"
                                         value={newAlias}
                                         onChange={e => setNewAlias(e.target.value)}
                                         className="w-full bg-gray-800 border-gray-700 text-gray-200 rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500"

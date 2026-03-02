@@ -75,30 +75,53 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
 
         incoming.forEach((r: any) => {
             const geo = geoDataMap[r.src_ip];
-            if (geo) {
+            let assigned = false;
+            if (geo) { // Keep geo data assignment for incoming
                 r.lat = geo.lat;
                 r.lon = geo.lon;
                 r.country = geo.country;
                 r.city = geo.city;
             }
+            // Add service map logic for incoming
+            if (geo && !geo.private && (geo.asn || geo.isp)) {
+                const svc = identifyService(geo.asn || geo.isp);
+                if (svc) {
+                    const current = serviceMap.get(svc.name) || { total_bytes: 0, color: svc.color };
+                    current.total_bytes += Number(r.bytes);
+                    serviceMap.set(svc.name, current);
+                    assigned = true;
+                }
+            }
+            if (!assigned && geo && !geo.private) {
+                const current = serviceMap.get('Other') || { total_bytes: 0, color: '#4B5563' };
+                current.total_bytes += Number(r.bytes);
+                serviceMap.set('Other', current);
+            }
         });
 
         outgoing.forEach((r: any) => {
             const geo = geoDataMap[r.dst_ip];
+            let assigned = false;
             if (geo) {
                 r.lat = geo.lat;
                 r.lon = geo.lon;
                 r.country = geo.country;
                 r.city = geo.city;
 
-                if (!geo.private) {
+                if (!geo.private && (geo.asn || geo.isp)) { // Added (geo.asn || geo.isp) check
                     const svc = identifyService(geo.asn || geo.isp);
                     if (svc) {
                         const current = serviceMap.get(svc.name) || { total_bytes: 0, color: svc.color };
                         current.total_bytes += Number(r.bytes);
                         serviceMap.set(svc.name, current);
+                        assigned = true;
                     }
                 }
+            }
+            if (!assigned && geo && !geo.private) { // Moved outside the initial 'if (geo)' block
+                const current = serviceMap.get('Other') || { total_bytes: 0, color: '#4B5563' };
+                current.total_bytes += Number(r.bytes);
+                serviceMap.set('Other', current);
             }
         });
 

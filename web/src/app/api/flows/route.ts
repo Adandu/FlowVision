@@ -19,7 +19,7 @@ export async function GET(request: Request) {
     default: timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR';
   }
 
-  const privateSubnet = `(
+  const privateSrc = `(
         match(src_ip, '^10\\\\.') OR match(src_ip, '^192\\\\.168\\\\.') OR match(src_ip, '^172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.')
     )`;
   const privateDst = `(
@@ -98,9 +98,9 @@ export async function GET(request: Request) {
 
     const trafficDirectionQuery = `
           SELECT
-            sumIf(bytes, ${privateSubnet} AND NOT ${privateDst}) AS outbound_bytes,
-            sumIf(bytes, NOT ${privateSubnet}) AS inbound_bytes,
-            sumIf(bytes, ${privateSubnet} AND ${privateDst}) AS internal_bytes
+            sumIf(bytes, ${privateSrc} AND NOT ${privateDst}) AS outbound_bytes,
+            sumIf(bytes, NOT ${privateSrc} AND ${privateDst}) AS inbound_bytes,
+            sumIf(bytes, ${privateSrc} AND ${privateDst}) AS internal_bytes
           FROM flows WHERE ${timeFilter}`;
 
     const geoMapDataQuery = `
@@ -161,20 +161,29 @@ export async function GET(request: Request) {
 
     geoMapRaw.forEach((g: any) => {
       const geo = geoDataMap[g.ip];
-      if (geo && !geo.private) {
+      let assigned = false;
+      if (geo && !geo.private && (geo.asn || geo.isp)) {
         const svc = identifyService(geo.asn || geo.isp);
         if (svc) {
           const current = serviceMap.get(svc.name) || { total_bytes: 0, color: svc.color };
           current.total_bytes += Number(g.total_bytes);
           serviceMap.set(svc.name, current);
+          assigned = true;
         }
+      }
+
+      // If we couldn't map this high-volume public IP to a known Service, aggregate into 'Other'
+      if (!assigned && geo && !geo.private) {
+        const current = serviceMap.get('Other') || { total_bytes: 0, color: '#4B5563' }; // Neutral Gray
+        current.total_bytes += Number(g.total_bytes);
+        serviceMap.set('Other', current);
       }
     });
 
     const topServices = Array.from(serviceMap.entries())
       .map(([service, data]) => ({ service, total_bytes: data.total_bytes, color: data.color }))
       .sort((a, b) => b.total_bytes - a.total_bytes)
-      .slice(0, 5);
+      .slice(0, 10);
     // ---------------------------------
 
     // Enrich payloads with GeoIP

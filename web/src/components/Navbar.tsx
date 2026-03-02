@@ -44,6 +44,9 @@ export default function Navbar() {
                         <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
                             FlowVision
                         </span>
+                        <span className="text-[10px] font-mono font-medium tracking-wider text-gray-500 bg-gray-800/80 px-1.5 py-0.5 rounded-full border border-gray-700/50">
+                            v1.0.0
+                        </span>
                     </Link>
 
                     {/* Desktop Nav links */}
