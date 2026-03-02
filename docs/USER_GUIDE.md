@@ -197,6 +197,31 @@ Click your avatar/initials in the top-right navbar to access your profile.
 
 ---
 
+---
+
+## Guest Access and Obfuscation
+
+FlowVision supports a **Guest Mode** for unauthenticated users (if `AUTH_MODE=local` or `proxy`). Guests can view the dashboard and flow logs, but sensitive data is automatically obfuscated:
+
+- **IP Addresses**: External IPs are replaced with `*****` by the backend.
+- **Charts**: Legends for Ports, Protocols, and Applications are redacted using `*****`.
+- **Flow Tables**: Protocol, Port, Bytes, and Packets are redacted using `*****`.
+- **Interactivity**: Guests **can** click on redacted IPs to view the detail page (which remains redacted), allowing for structural analysis without data exposure.
+- **AI Summary**: The AI Traffic Summary is hidden entirely for guests.
+
+---
+
+## AI Traffic Summary
+
+If configured by an administrator, FlowVision can provide an **AI-generated summary** of recent traffic patterns.
+
+1. **Configure AI**: Go to **Admin → AI Integration**.
+2. **Select Provider**: Toggle on Google Gemini, Anthropic Claude, or OpenAI.
+3. **Save Key**: Enter your API key and save settings.
+4. **View Summary**: A sparkle ✨ icon will appear at the top of the Dashboard and IP Details pages with a natural language breakdown of the traffic.
+
+---
+
 ## Troubleshooting
 
 **Q: I see no data on the dashboard**

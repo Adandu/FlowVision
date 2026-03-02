@@ -168,6 +168,32 @@ JWT payload: `{ sub: userId, role: 'admin'|'viewer', iat, exp }`
 
 ---
 
+---
+
+## Guest Obfuscation Implementation
+
+When adding new charts or tables that display sensitive data, you **must** implement obfuscation for unauthenticated guests:
+
+1. **Check Auth State**: Use the `useAuth()` hook in your page or component.
+2. **Propagate `isGuest`**: Pass `isGuest={isLoggedIn === false}` to the component.
+3. **Redact in Component**:
+   - For **ECharts**: Replace legend/tooltip labels with `*****` strings. Do not use block characters like `████` as they may not render in default browser fonts within the canvas.
+   - For **Tables**: Wrap sensitive cell content in a conditional: `{isGuest ? '*****' : data}`.
+4. **IPs**: Backend already obfuscates IPs for guests. Retain clickable links to `/ip/[ip]` as the detail page also handles obfuscation.
+
+---
+
+## AI Integration Architecture
+
+FlowVision uses a multi-provider AI summary feature:
+
+- **Settings**: Stored in ClickHouse `settings` table (`ai_enabled`, `ai_provider`, `ai_gemini_key`, etc.).
+- **Backend API**: `/api/ai/summary` fetches traffic metrics, constructs a prompt, and calls the active AI provider (Gemini, Claude, or OpenAI).
+- **Frontend**: `AISummaryWidget.tsx` renders the output. It **must** hide itself for guests to prevent leaked metadata or API costs.
+- **Security**: API keys are never sent to the frontend.
+
+---
+
 ## Telegraf → ClickHouse Data Flow
 
 Telegraf runs with the `netflow` input plugin (UDP :2055) and a Starlark processor that:
