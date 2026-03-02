@@ -96,7 +96,7 @@ export default function AdminAliasesPage() {
                             <MonitorCog className="w-6 h-6 text-blue-400" /> Custom IP Aliases
                         </h1>
                         <p className="text-gray-400 mt-1">
-                            Assign memorable names to IP addresses (e.g. MasterChief) across the application.
+                            Assign memorable names to IP addresses (e.g. MyServer) across the application.
                         </p>
                     </div>
 

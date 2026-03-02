@@ -40,20 +40,22 @@ export default function TopServicesCard({ data, title = "Top 10 Applications" }:
         },
         legend: {
             orient: 'vertical',
-            right: '0%',
+            left: '52%',
             top: 'middle',
-            textStyle: { color: '#9CA3AF' },
+            textStyle: { color: '#9CA3AF', fontSize: 11 },
             type: 'scroll',
+            pageTextStyle: { color: '#6B7280' },
+            pageIconColor: '#9CA3AF',
         },
         series: [
             {
                 name: 'Applications',
                 type: 'pie',
                 radius: ['45%', '70%'],
-                center: ['30%', '50%'],
+                center: ['24%', '50%'],
                 avoidLabelOverlap: false,
                 itemStyle: {
-                    borderRadius: 10,
+                    borderRadius: 8,
                     borderColor: '#111827',
                     borderWidth: 2
                 },

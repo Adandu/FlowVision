@@ -246,10 +246,21 @@ export default function IPDetailPage() {
                                     </div>
                                 </div>
 
-                                {/* Applications Widget */}
-                                {donuts.topServices && donuts.topServices.length > 0 && (
-                                    <TopServicesCard data={donuts.topServices} title="All Applications" />
-                                )}
+                                {/* Applications Widget - in grid */}
+                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl flex flex-col h-full">
+                                    {donuts.topServices && donuts.topServices.length > 0 ? (
+                                        <TopServicesCard data={donuts.topServices} title="All Applications" />
+                                    ) : (
+                                        <>
+                                            <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                                                <Activity className="w-4 h-4 text-emerald-400" /> All Applications
+                                            </h3>
+                                            <div className="flex-1 flex items-center justify-center">
+                                                <p className="text-gray-500 text-sm text-center">No application data detected</p>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         )}
 
