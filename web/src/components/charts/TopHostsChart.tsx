@@ -3,7 +3,7 @@
 import ReactECharts from 'echarts-for-react';
 
 interface Props {
-    data: { ip: string; total_bytes: number }[];
+    data: { ip: string; total_bytes: number; displayName?: string }[];
     title: string;
     onIpClick?: (ip: string) => void;
 }
@@ -63,14 +63,21 @@ export default function TopHostsChart({ data, title, onIpClick }: Props) {
                     label: { show: true, fontSize: 16, fontWeight: 'bold', color: '#F3F4F6' }
                 },
                 labelLine: { show: false },
-                data: data.map(item => ({ value: item.total_bytes, name: item.ip }))
+                // Map ip -> label for lookup when clicking
+                data: data.map(item => ({
+                    value: item.total_bytes,
+                    name: item.displayName || item.ip,
+                    realIp: item.ip // store real ip for navigation
+                }))
             }
         ]
     };
 
     const onEvents = onIpClick ? {
         click: (params: any) => {
-            if (params.name) onIpClick(params.name);
+            // Use realIp if available (alias case) otherwise fall back to name
+            const ip = params.data?.realIp || params.name;
+            if (ip) onIpClick(ip);
         }
     } : undefined;
 

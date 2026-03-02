@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, Users, ArrowLeft, Database, Activity, MonitorCog, Bell, Globe, Terminal } from 'lucide-react';
+import { Settings, Users, ArrowLeft, Database, Activity, MonitorCog, Bell, Globe, Terminal, Sparkles } from 'lucide-react';
 
 export default function AdminSidebar() {
     const pathname = usePathname();
@@ -14,6 +14,7 @@ export default function AdminSidebar() {
         { href: '/admin/logs', icon: <Terminal className="w-4 h-4" />, label: 'System Logs', activeClass: 'text-slate-400 bg-slate-500/10', color: 'text-slate-400' },
         { href: '/admin/notifications', icon: <Bell className="w-4 h-4" />, label: 'Notifications', activeClass: 'text-purple-400 bg-purple-500/10', color: 'text-purple-400' },
         { href: '/admin/oidc', icon: <Globe className="w-4 h-4" />, label: 'OIDC / SSO', activeClass: 'text-indigo-400 bg-indigo-500/10', color: 'text-indigo-400' },
+        { href: '/admin/ai', icon: <Sparkles className="w-4 h-4" />, label: 'AI Integration', activeClass: 'text-violet-400 bg-violet-500/10', color: 'text-violet-400' },
     ];
 
     return (

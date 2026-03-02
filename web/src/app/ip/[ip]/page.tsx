@@ -15,6 +15,7 @@ const FlowDiagramChart = dynamic(() => import('@/components/charts/FlowDiagramCh
 const GeoMapChart = dynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
 const TopServicesCard = dynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
+const AISummaryWidget = dynamic(() => import('@/components/AISummaryWidget'), { ssr: false });
 
 type IntervalType = '10m' | '1h' | '24h' | '7d' | '30d';
 
@@ -140,6 +141,9 @@ export default function IPDetailPage() {
                         ))}
                     </div>
                 </div>
+
+                {/* AI Summary Widget - shows only if AI is configured */}
+                <AISummaryWidget interval={interval === 'Live' ? '10m' : interval} context="ip" ip={ip} />
 
                 {loading && !data && <div className="text-gray-500 py-12 text-center animate-pulse flex items-center justify-center gap-2"><Activity className="w-4 h-4 animate-spin" /> Loading traffic details...</div>}
 

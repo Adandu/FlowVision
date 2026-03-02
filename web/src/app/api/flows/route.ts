@@ -120,6 +120,9 @@ export async function GET(request: Request) {
       clickhouse.query({ query: geoMapDataQuery, format: 'JSONEachRow' }).then(res => res.json()),
     ]);
 
+    // Debug logging for inbound/outbound traffic
+    console.log('[flows] trafficDirection raw result:', JSON.stringify(trafficDirection));
+
     const { getAppName } = await import('@/lib/protocols');
 
     // Group Top Ports by L7 Application for a cleaner chart
@@ -238,7 +241,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data: { timeSeries, topDestinations, topSources, topPorts, protocolBreakdown, trafficDirection: trafficDirection[0] || {}, geoTraffic }
+      data: { timeSeries, topDestinations, topSources, topPorts, protocolBreakdown, trafficDirection: trafficDirection[0] || {}, geoTraffic, topServices }
     });
   } catch (error) {
     console.error('ClickHouse Query Error:', error);

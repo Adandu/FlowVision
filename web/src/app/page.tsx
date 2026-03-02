@@ -15,6 +15,7 @@ const ProtocolChart = dynamic(() => import('@/components/charts/ProtocolChart'),
 const GeoMapChart = dynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
 const TopServicesCard = dynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
+const AISummaryWidget = dynamic(() => import('@/components/AISummaryWidget'), { ssr: false });
 
 type IntervalType = '10m' | '1h' | '24h' | '1w' | '1mo';
 
@@ -82,6 +83,9 @@ export default function Dashboard() {
       <Navbar />
 
       <main className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 mt-8 space-y-6">
+        {/* AI Summary Widget - shows only if AI is configured */}
+        <AISummaryWidget interval={interval === 'Live' ? '10m' : interval} context="dashboard" />
+
         {/* Interval selector */}
         <div className="flex space-x-2 justify-end">
           {intervals.map((int) => (
@@ -118,7 +122,7 @@ export default function Dashboard() {
         </div>
 
         {/* Protocol + Top Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Top Destinations */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
             {data && <TopHostsChart data={data.topDestinations.slice(0, 10)} title="Top 10 Destinations" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
@@ -142,14 +146,12 @@ export default function Dashboard() {
             <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Protocol Breakdown</h2>
             {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} />}
           </div>
-        </div>
 
-        {/* Top Services (now Applications ASN) */}
-        {data?.topServices && data.topServices.length > 0 && (
-          <div className="w-full">
-            <TopServicesCard data={data.topServices.slice(0, 10)} />
+          {/* Top Applications (ASN-based) - always rendered even if empty */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
+            <TopServicesCard data={data?.topServices?.slice(0, 10) || []} title="Top 10 Applications" />
           </div>
-        )}
+        </div>
 
         {/* Global Traffic Map */}
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">

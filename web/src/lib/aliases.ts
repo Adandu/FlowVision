@@ -36,8 +36,9 @@ export async function getAliasesMap(): Promise<Record<string, string>> {
 }
 
 /**
- * Convenience function that replaces string properties of data objects with their alias, if available.
- * It modifies the object keys: ['src_ip', 'dst_ip', 'peer', 'ip']
+ * Convenience function that enriches data objects with their alias as a display label.
+ * Instead of overwriting the IP field (which breaks navigation), it adds a `displayName` property.
+ * The original IP is preserved so clicking a chart slice still routes to the correct IP page.
  */
 export async function applyAliases(data: any[]) {
     if (!data || data.length === 0) return data;
@@ -46,10 +47,11 @@ export async function applyAliases(data: any[]) {
     if (Object.keys(aliases).length === 0) return data;
 
     data.forEach(item => {
-        if (item.src_ip && aliases[item.src_ip]) item.src_ip = aliases[item.src_ip];
-        if (item.dst_ip && aliases[item.dst_ip]) item.dst_ip = aliases[item.dst_ip];
-        if (item.peer && aliases[item.peer]) item.peer = aliases[item.peer];
-        if (item.ip && aliases[item.ip]) item.ip = aliases[item.ip];
+        // For each known IP field, add a displayName alias but keep the real IP intact
+        if (item.src_ip && aliases[item.src_ip]) item.src_displayName = aliases[item.src_ip];
+        if (item.dst_ip && aliases[item.dst_ip]) item.dst_displayName = aliases[item.dst_ip];
+        if (item.peer && aliases[item.peer]) item.peer_displayName = aliases[item.peer];
+        if (item.ip && aliases[item.ip]) item.displayName = aliases[item.ip];
     });
 
     return data;
