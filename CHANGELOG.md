@@ -4,12 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.3.5] - 2026-03-02
+## [1.3.7] - 2026-03-02
 
 ### Fixed
-- **GuestOverlay fully opaque**: Raised background alpha from `0.55` to `0.92` and blur from `8px` to `12px` — chart labels, legend text, protocol names, port numbers and application names are no longer visible through the overlay on ANY widget.
-- **Dashboard Recent Flows now obfuscated**: The Recent Flows card at the bottom of the dashboard was missing a guest overlay; it is now covered.
-- **AI Traffic Summary hidden for guests**: `AISummaryWidget` now uses `useAuth` and returns `null` immediately for unauthenticated users — no API call is made and the widget is not rendered at all.
+- **Consistent obfuscation style site-wide**: Replaced `████` block characters (which rendered as invisible white boxes in ECharts' default font) with `*****` strings — matching the style that Destinations/Sources already used for obfuscated IPs.
+- **Overlays removed from all widgets**: All `GuestOverlay` lock-icon overlays removed. Sensitive data is now redacted *inline* at the data level so the page structure remains navigable for guests.
+- **Recent Flows / Flow Log IPs remain clickable**: Flow tables no longer have a blocking overlay — guests can click IP addresses to navigate to IP detail pages, while Proto, Port, Bytes, and Packets show `*****`.
+- **Flow Log page table now properly redacted**: `isGuest` prop was missing from the `FlowTable` call — fixed.
+- **Active Services / Active Applications**: Charts now receive `isGuest` directly; overlays removed.
+- **Active IPs**: Overlays removed — IP obfuscation is handled by the backend for guests.
+
+---
+
+## [1.3.6] - 2026-03-02
+
+### Fixed
+- **Critical crash for guest users**: `AISummaryWidget` violated React's Rules of Hooks — `useCallback` and `useEffect` were declared after an early `return null`, causing React error #300 for every unauthenticated visitor. All hooks are now declared before any conditional return. A 401 guard was also added to silently suppress auth errors.
 
 ---
 
@@ -17,9 +27,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 - **Guest overlay reverted to semi-transparent style** — data is now correctly redacted *at source* so a heavy opaque overlay is no longer needed.
-- **Chart legend data redacted for guests**: `TopPortsChart`, `ProtocolChart`, and `TopServicesCard` now accept an `isGuest` prop. When true, all legend labels (port numbers, service names, protocol names, application names) are replaced with `████`. Tooltip values are also redacted. Donut colors/shapes remain so the page looks structured.
-- **FlowTable columns redacted for guests**: Protocol, Port, Bytes, and Packets columns now show `████` for unauthenticated users. Source/Dest IPs were already handled by the backend.
-- **Dashboard Recent Flows covered**: Added `GuestOverlay` to the Recent Flows card at the bottom of the dashboard.
+- **Chart legend data redacted for guests**: `TopPortsChart`, `ProtocolChart`, and `TopServicesCard` now accept an `isGuest` prop. When true, all legend labels (port numbers, service names, protocol names, application names) are replaced with `*****`. Tooltip values are also redacted. Donut colors/shapes remain so the page looks structured.
+- **FlowTable columns redacted for guests**: Protocol, Port, Bytes, and Packets columns now show `*****` for unauthenticated users. Source/Dest IPs were already handled by the backend.
+- **Dashboard Recent Flows covered**: Added guest overlay to the Recent Flows card at the bottom of the dashboard.
 - **AI Summary hidden for guests**: `AISummaryWidget` returns `null` immediately for unauthenticated users via `useAuth` hook — no API call is made.
 
 ---
