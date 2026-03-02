@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Settings, Users, Database, Globe, Bell, ChevronRight, Shield, Server } from 'lucide-react';
+import { Settings, Users, Database, Globe, Bell, ChevronRight, Shield, Server, Terminal } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
 
@@ -23,7 +23,8 @@ export default function AdminPage() {
         { href: '/admin/aliases', icon: <Server className="w-6 h-6 text-blue-400" />, title: 'IP Aliases', desc: 'Assign custom names to private network IPs' },
         { href: '/admin/metrics', icon: <Globe className="w-6 h-6 text-pink-400" />, title: 'System Metrics', desc: 'Live CPU, RAM and Database Storage telemetry' },
         { href: '/admin/tasks', icon: <Database className="w-6 h-6 text-amber-400" />, title: 'Scheduled Tasks', desc: 'Database maintenance, cleanup and optimizations' },
-        { href: '/admin/retention', icon: <Settings className="w-6 h-6 text-slate-400" />, title: 'Data Retention', desc: 'Configure how long flow data is kept in ClickHouse' },
+        { href: '/admin/retention', icon: <Settings className="w-6 h-6 text-gray-400" />, title: 'Data Retention', desc: 'Configure how long flow data is kept in ClickHouse' },
+        { href: '/admin/logs', icon: <Terminal className="w-6 h-6 text-slate-400" />, title: 'System Logs', desc: 'Live output streams for WebUI, Netflow & Database plugins' },
     ];
 
     if (!user) return null;

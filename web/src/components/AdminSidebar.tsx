@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, Users, ArrowLeft, Database, Activity, MonitorCog, Bell, Globe } from 'lucide-react';
+import { Settings, Users, ArrowLeft, Database, Activity, MonitorCog, Bell, Globe, Terminal } from 'lucide-react';
 
 export default function AdminSidebar() {
     const pathname = usePathname();
@@ -11,6 +11,7 @@ export default function AdminSidebar() {
         { href: '/admin/metrics', icon: <Activity className="w-4 h-4" />, label: 'Metrics', activeClass: 'text-pink-400 bg-pink-500/10', color: 'text-pink-400' },
         { href: '/admin/tasks', icon: <Database className="w-4 h-4" />, label: 'Scheduled Tasks', activeClass: 'text-amber-400 bg-amber-500/10', color: 'text-amber-400' },
         { href: '/admin/retention', icon: <Settings className="w-4 h-4" />, label: 'Data Retention', activeClass: 'text-gray-200 bg-gray-800', color: 'text-gray-400' },
+        { href: '/admin/logs', icon: <Terminal className="w-4 h-4" />, label: 'System Logs', activeClass: 'text-slate-400 bg-slate-500/10', color: 'text-slate-400' },
         { href: '/admin/notifications', icon: <Bell className="w-4 h-4" />, label: 'Notifications', activeClass: 'text-purple-400 bg-purple-500/10', color: 'text-purple-400' },
         { href: '/admin/oidc', icon: <Globe className="w-4 h-4" />, label: 'OIDC / SSO', activeClass: 'text-indigo-400 bg-indigo-500/10', color: 'text-indigo-400' },
     ];

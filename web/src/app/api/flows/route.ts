@@ -99,7 +99,7 @@ export async function GET(request: Request) {
     const trafficDirectionQuery = `
           SELECT
             sumIf(bytes, ${privateSubnet} AND NOT ${privateDst}) AS outbound_bytes,
-            sumIf(bytes, NOT ${privateSubnet} AND ${privateDst}) AS inbound_bytes,
+            sumIf(bytes, NOT ${privateSubnet}) AS inbound_bytes,
             sumIf(bytes, ${privateSubnet} AND ${privateDst}) AS internal_bytes
           FROM flows WHERE ${timeFilter}`;
 

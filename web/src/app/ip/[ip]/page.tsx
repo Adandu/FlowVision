@@ -216,7 +216,7 @@ export default function IPDetailPage() {
                                     </h3>
                                     <div className="h-64">
                                         {donuts.outgoing?.length > 0 ? (
-                                            <TopHostsChart data={donuts.outgoing.map((d: any) => ({ peer: d.dst_ip, total_bytes: d.bytes }))} title="Outgoing" />
+                                            <TopHostsChart data={donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes }))} title="Outgoing" />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
@@ -226,7 +226,7 @@ export default function IPDetailPage() {
                                     </h3>
                                     <div className="h-64">
                                         {donuts.incoming?.length > 0 ? (
-                                            <TopHostsChart data={donuts.incoming.map((d: any) => ({ peer: d.src_ip, total_bytes: d.bytes }))} title="Incoming" />
+                                            <TopHostsChart data={donuts.incoming.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes }))} title="Incoming" />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
