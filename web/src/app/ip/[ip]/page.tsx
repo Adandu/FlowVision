@@ -12,6 +12,7 @@ const BandwidthChart = dynamic(() => import('@/components/charts/BandwidthChart'
 const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
 const TopPortsChart = dynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
 const FlowDiagramChart = dynamic(() => import('@/components/charts/FlowDiagramChart'), { ssr: false });
+const GeoMapChart = dynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
 
 type IntervalType = '10m' | '1h' | '24h' | '7d' | '30d';
@@ -193,7 +194,20 @@ export default function IPDetailPage() {
                             </div>
                         </div>
 
-                        {/* 3. Donut Graphs */}
+                        {/* 3. Global Traffic Map */}
+                        {donuts && (
+                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl overflow-hidden mb-6">
+                                <GeoMapChart
+                                    title="IP Traffic Sources & Destinations"
+                                    data={[
+                                        ...donuts.incoming.map((d: any) => ({ ip: d.src_ip, lat: d.lat, lon: d.lon, total_bytes: d.bytes, country: d.country, city: d.city })),
+                                        ...donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, lat: d.lat, lon: d.lon, total_bytes: d.bytes, country: d.country, city: d.city }))
+                                    ].filter(d => d.lat && d.lon)}
+                                />
+                            </div>
+                        )}
+
+                        {/* 4. Donut Graphs */}
                         {donuts && (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
@@ -229,7 +243,7 @@ export default function IPDetailPage() {
                             </div>
                         )}
 
-                        {/* 4. Recent Flows Table */}
+                        {/* 5. Recent Flows Table */}
                         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 shadow-xl">
                             <h3 className="text-base font-semibold text-gray-200 mb-4 px-2">Flow Log Table</h3>
                             <FlowTable flows={data.recentFlows || []} />

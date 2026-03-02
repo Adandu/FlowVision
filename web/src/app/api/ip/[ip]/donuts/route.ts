@@ -61,6 +61,35 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
         }).then(r => r.json());
 
         const user = await getCurrentUser();
+
+        // Collect unique IPs for GeoLookup before obfuscation
+        const allIps = new Set<string>();
+        incoming.forEach((r: any) => allIps.add(r.src_ip));
+        outgoing.forEach((r: any) => allIps.add(r.dst_ip));
+
+        const { batchGeoIPLookup } = await import('@/lib/geoip');
+        const geoDataMap = await batchGeoIPLookup(Array.from(allIps));
+
+        incoming.forEach((r: any) => {
+            const geo = geoDataMap[r.src_ip];
+            if (geo) {
+                r.lat = geo.lat;
+                r.lon = geo.lon;
+                r.country = geo.country;
+                r.city = geo.city;
+            }
+        });
+
+        outgoing.forEach((r: any) => {
+            const geo = geoDataMap[r.dst_ip];
+            if (geo) {
+                r.lat = geo.lat;
+                r.lon = geo.lon;
+                r.country = geo.country;
+                r.city = geo.city;
+            }
+        });
+
         if (!user) {
             incoming.forEach((r: any) => r.src_ip = obfuscateIp(r.src_ip));
             outgoing.forEach((r: any) => r.dst_ip = obfuscateIp(r.dst_ip));

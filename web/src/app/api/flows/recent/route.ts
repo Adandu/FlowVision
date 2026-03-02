@@ -11,15 +11,16 @@ export async function GET(request: Request) {
         const rows = await clickhouse.query({
             query: `
                 SELECT
-                    timestamp,
+                    max(timestamp) as timestamp,
                     src_ip,
                     dst_ip,
                     src_port,
                     dst_port,
                     multiIf(protocol = 6, 'TCP', protocol = 17, 'UDP', protocol = 1, 'ICMP', 'Other') AS protocol,
-                    bytes,
-                    packets
+                    SUM(bytes) as bytes,
+                    SUM(packets) as packets
                 FROM flows
+                GROUP BY src_ip, dst_ip, src_port, dst_port, protocol
                 ORDER BY timestamp DESC
                 LIMIT ${limit}
             `,

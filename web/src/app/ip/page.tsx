@@ -8,16 +8,28 @@ import Navbar from '@/components/Navbar';
 export default function IPSearchPage() {
     const [ip, setIp] = useState('');
     const [isGuest, setIsGuest] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
-        fetch('/api/config')
-            .then(r => r.json())
-            .then(data => {
-                if (data.guest_mode_enabled) setIsGuest(true);
-            })
-            .catch(() => { });
+        Promise.all([
+            fetch('/api/config').then(r => r.json()).catch(() => ({})),
+            fetch('/api/auth/me').then(r => r.json()).catch(() => ({}))
+        ]).then(([configData, authData]) => {
+            if (authData.success && authData.user) {
+                setIsLoggedIn(true);
+                setIsGuest(false); // Logged in users are never restricted by guest mode
+            } else if (configData.guest_mode_enabled) {
+                // If not logged in, but guest mode is globally enabled, they ACT as a guest
+                // Actually the original logic was: if guest_mode_enabled == true, then they are a guest.
+                // But wait, the user said: "disabled only for guest users".
+                // We should disable if they are NOT logged in.
+                setIsGuest(true);
+            }
+        });
     }, []);
+
+    const isDisabled = isGuest && !isLoggedIn;
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,15 +59,15 @@ export default function IPSearchPage() {
                                 type="text"
                                 value={ip}
                                 onChange={(e) => setIp(e.target.value)}
-                                placeholder={isGuest ? "Search disabled in Guest Mode" : "e.g. 192.168.1.1 or 8.8.8.8"}
-                                disabled={isGuest}
+                                placeholder={isDisabled ? "Search disabled for Guests" : "e.g. 192.168.1.1 or 8.8.8.8"}
+                                disabled={isDisabled}
                                 className="w-full pl-12 pr-4 py-4 bg-gray-900 border border-gray-800 rounded-xl text-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                                autoFocus={!isGuest}
+                                autoFocus={!isDisabled}
                             />
                         </div>
                         <button
                             type="submit"
-                            disabled={!ip.trim() || isGuest}
+                            disabled={!ip.trim() || isDisabled}
                             className="mt-4 w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition-colors shadow-lg shadow-blue-500/20"
                         >
                             Analyze Traffic

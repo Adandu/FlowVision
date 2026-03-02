@@ -99,17 +99,25 @@ export async function GET(request: Request) {
     const trafficDirectionQuery = `
           SELECT
             sumIf(bytes, ${privateSubnet} AND NOT ${privateDst}) AS outbound_bytes,
-            sumIf(bytes, NOT ${privateSubnet}) AS inbound_bytes,
+            sumIf(bytes, NOT ${privateSubnet} AND ${privateDst}) AS inbound_bytes,
             sumIf(bytes, ${privateSubnet} AND ${privateDst}) AS internal_bytes
           FROM flows WHERE ${timeFilter}`;
 
-    const [timeSeries, topDestinations, topSources, topPortsRaw, protocolBreakdown, trafficDirection] = await Promise.all([
+    const geoMapDataQuery = `
+          SELECT ip, sum(total_bytes) as total_bytes FROM (
+              SELECT dst_ip AS ip, SUM(bytes) as total_bytes FROM flows WHERE ${timeFilter} GROUP BY ip
+              UNION ALL
+              SELECT src_ip AS ip, SUM(bytes) as total_bytes FROM flows WHERE ${timeFilter} GROUP BY ip
+          ) GROUP BY ip ORDER BY total_bytes DESC LIMIT 100`;
+
+    const [timeSeries, topDestinations, topSources, topPortsRaw, protocolBreakdown, trafficDirection, geoMapRaw] = await Promise.all([
       clickhouse.query({ query: timeSeriesQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: topDestinationsQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: topSourcesQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: topPortsQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: protocolBreakdownQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: trafficDirectionQuery, format: 'JSONEachRow' }).then(res => res.json()),
+      clickhouse.query({ query: geoMapDataQuery, format: 'JSONEachRow' }).then(res => res.json()),
     ]);
 
     const { getAppName } = await import('@/lib/protocols');
@@ -141,6 +149,7 @@ export async function GET(request: Request) {
     const allIps = new Set<string>();
     topDestinations.forEach((d: any) => allIps.add(d.ip));
     topSources.forEach((s: any) => allIps.add(s.ip));
+    geoMapRaw.forEach((g: any) => allIps.add(g.ip));
 
     // Batch GeoIP Lookup (on the backend, before obfuscation)
     const { batchGeoIPLookup } = await import('@/lib/geoip');
@@ -171,18 +180,34 @@ export async function GET(request: Request) {
       }
     });
 
+    const geoTraffic = geoMapRaw.map((g: any) => {
+      const geo = geoDataMap[g.ip];
+      if (geo) {
+        return {
+          ...g,
+          country: geo.country,
+          city: geo.city || '',
+          lat: geo.lat,
+          lon: geo.lon
+        };
+      }
+      return g;
+    }).filter((g: any) => g.lat && g.lon); // Only keep IPs with coordinates for the map
+
     // Apply Admin IP Aliases or Obfuscate for Guests
     if (isGuest) {
       topDestinations.forEach((d: any) => d.ip = obfuscateIp(d.ip));
       topSources.forEach((s: any) => s.ip = obfuscateIp(s.ip));
+      geoTraffic.forEach((g: any) => g.ip = obfuscateIp(g.ip));
     } else {
       await applyAliases(topDestinations);
       await applyAliases(topSources);
+      await applyAliases(geoTraffic);
     }
 
     return NextResponse.json({
       success: true,
-      data: { timeSeries, topDestinations, topSources, topPorts, protocolBreakdown, trafficDirection: trafficDirection[0] || {} }
+      data: { timeSeries, topDestinations, topSources, topPorts, protocolBreakdown, trafficDirection: trafficDirection[0] || {}, geoTraffic }
     });
   } catch (error) {
     console.error('ClickHouse Query Error:', error);

@@ -98,8 +98,9 @@ export default function Dashboard() {
           <StatCard title="Total Bandwidth" value={!data && loading ? '...' : formatBytes(data?.timeSeries?.reduce((a: number, c: any) => a + c.total_bytes, 0) || 0)} icon={<ArrowRightLeft />} color="blue" span={2} />
           <StatCard title="Active IPs" value={!data && loading ? '...' : ((data?.topSources?.length || 0) + (data?.topDestinations?.length || 0)).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} />
           <StatCard title="Active Services" value={!data && loading ? '...' : (data?.topPorts?.length || 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} />
-          <StatCard title="Outbound" value={!data && loading ? '...' : formatBytes(Number(dir.outbound_bytes) || 0)} icon={<ArrowUpRight />} color="orange" />
-          <StatCard title="Inbound" value={!data && loading ? '...' : formatBytes(Number(dir.inbound_bytes) || 0)} icon={<ArrowDownLeft />} color="teal" />
+          <StatCard title="Outbound" value={!data && loading ? '...' : formatBytes(Number(dir.outbound_bytes) || 0)} icon={<ArrowUpRight />} color="orange" span={2} />
+          <StatCard title="Inbound" value={!data && loading ? '...' : formatBytes(Number(dir.inbound_bytes) || 0)} icon={<ArrowDownLeft />} color="teal" span={2} />
+          <StatCard title="Internal" value={!data && loading ? '...' : formatBytes(Number(dir.internal_bytes) || 0)} icon={<ArrowLeftRight />} color="purple" span={2} />
         </div>
 
         {/* Bandwidth Chart */}
@@ -144,7 +145,7 @@ export default function Dashboard() {
           {data && (
             <GeoMapChart
               title="Global Traffic Map"
-              data={[...(data.topDestinations || []), ...(data.topSources || [])]}
+              data={data.geoTraffic || []}
               onIpClick={(ip) => router.push(`/ip/${ip}`)}
             />
           )}
