@@ -45,7 +45,7 @@ export default function Navbar() {
                             FlowVision
                         </span>
                         <span className="text-[10px] font-mono font-medium tracking-wider text-gray-500 bg-gray-800/80 px-1.5 py-0.5 rounded-full border border-gray-700/50">
-                            v1.0.0
+                            v1.1.0
                         </span>
                     </Link>
 
