@@ -106,7 +106,7 @@ export default function Dashboard() {
           <StatCard title="Internal" value={!data && loading ? '...' : formatBytes(Number(dir.internal_bytes) || 0)} icon={<ArrowLeftRight />} color="purple" span={1} />
           <StatCard title="Active IPs" value={!data && loading ? '...' : ((data?.topSources?.length || 0) + (data?.topDestinations?.length || 0)).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} span={1} />
           <StatCard title="Active Services" value={!data && loading ? '...' : (data?.topPorts?.length || 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} span={1} />
-          <StatCard title="Active Applications" value={!data && loading ? '...' : (data?.topServices?.length || 0).toString()} icon={<Activity />} color="orange" href={`/active-services?interval=${interval}`} span={1} />
+          <StatCard title="Active Applications" value={!data && loading ? '...' : (data?.topServices?.length || 0).toString()} icon={<Activity />} color="orange" href={`/active-applications?interval=${interval}`} span={1} />
         </div>
 
         {/* Bandwidth Chart */}

@@ -1,6 +1,7 @@
 'use client';
 
 import ReactECharts from 'echarts-for-react';
+import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chartConstants';
 
 interface Props {
     data: { ip: string; total_bytes: number; displayName?: string }[];
@@ -39,18 +40,14 @@ export default function TopHostsChart({ data, title, onIpClick }: Props) {
             }
         },
         legend: {
-            orient: 'vertical',
-            right: '0%',
-            top: 'middle',
-            textStyle: { color: '#9CA3AF' },
-            type: 'scroll',
+            ...LEGEND_CONFIG,
         },
         series: [
             {
                 name: 'Bytes',
                 type: 'pie',
-                radius: ['45%', '70%'],
-                center: ['30%', '50%'],
+                radius: DONUT_RADIUS,
+                center: DONUT_CENTER,
                 avoidLabelOverlap: false,
                 itemStyle: {
                     borderRadius: 10,
@@ -81,5 +78,5 @@ export default function TopHostsChart({ data, title, onIpClick }: Props) {
         }
     } : undefined;
 
-    return <ReactECharts option={options} style={{ height: '300px', width: '100%' }} onEvents={onEvents} />;
+    return <ReactECharts option={options} style={{ height: DONUT_HEIGHT, width: '100%' }} onEvents={onEvents} />;
 }

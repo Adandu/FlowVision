@@ -97,7 +97,8 @@ async function getIPSnapshot(ip: string, interval: string): Promise<string> {
 async function callGemini(apiKey: string, prompt: string): Promise<string> {
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Use gemini-2.0-flash — current stable model supported by v1beta API
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const result = await model.generateContent(prompt);
     return result.response.text();
 }

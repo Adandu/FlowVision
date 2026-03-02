@@ -1,45 +1,37 @@
 'use client';
 
 import ReactECharts from 'echarts-for-react';
-import * as echarts from 'echarts/core';
+import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chartConstants';
+
+function formatBytes(bytes: number) {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
 
 export default function TopPortsChart({ data }: { data: { port: number | string; total_bytes: number }[] }) {
-    // Sort descending
-    const sortedData = [...data].sort((a, b) => a.total_bytes - b.total_bytes);
+    const sortedData = [...data].sort((a, b) => b.total_bytes - a.total_bytes);
 
     const options = {
         tooltip: {
             trigger: 'item',
             formatter: (params: any) => {
                 const p = params.data;
-                const bytes = p.value;
-                let readable: string;
-                if (bytes === 0) { readable = '0 B'; }
-                else {
-                    const k = 1024;
-                    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-                    const i = Math.floor(Math.log(bytes) / Math.log(k));
-                    readable = parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-                }
-                return `${params.marker} ${p.name}<br/>Traffic: <b>${readable}</b>`;
+                return `${params.marker} ${p.name}<br/>Traffic: <b>${formatBytes(p.value)}</b>`;
             }
         },
-        legend: {
-            orient: 'vertical',
-            right: '0%',
-            top: 'middle',
-            textStyle: { color: '#9CA3AF' },
-            type: 'scroll',
-        },
+        legend: LEGEND_CONFIG,
         series: [
             {
                 name: 'Traffic',
                 type: 'pie',
-                radius: ['45%', '70%'],
-                center: ['30%', '50%'],
+                radius: DONUT_RADIUS,
+                center: DONUT_CENTER,
                 avoidLabelOverlap: false,
                 itemStyle: {
-                    borderRadius: 10,
+                    borderRadius: 8,
                     borderColor: '#111827',
                     borderWidth: 2
                 },
@@ -53,5 +45,5 @@ export default function TopPortsChart({ data }: { data: { port: number | string;
         ]
     };
 
-    return <ReactECharts option={options} style={{ height: '300px', width: '100%' }} />;
+    return <ReactECharts option={options} style={{ height: DONUT_HEIGHT, width: '100%' }} />;
 }

@@ -2,6 +2,7 @@
 
 import ReactECharts from 'echarts-for-react';
 import { Activity } from 'lucide-react';
+import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chartConstants';
 
 interface Props {
     data: { service: string; total_bytes: number; color: string }[];
@@ -38,21 +39,13 @@ export default function TopServicesCard({ data, title = "Top 10 Applications" }:
                 return `${params.marker} ${item.name}<br/>Traffic: <b>${formatBytes(item.value)}</b>`;
             }
         },
-        legend: {
-            orient: 'vertical',
-            left: '52%',
-            top: 'middle',
-            textStyle: { color: '#9CA3AF', fontSize: 11 },
-            type: 'scroll',
-            pageTextStyle: { color: '#6B7280' },
-            pageIconColor: '#9CA3AF',
-        },
+        legend: LEGEND_CONFIG,
         series: [
             {
                 name: 'Applications',
                 type: 'pie',
-                radius: ['45%', '70%'],
-                center: ['24%', '50%'],
+                radius: DONUT_RADIUS,
+                center: DONUT_CENTER,
                 avoidLabelOverlap: false,
                 itemStyle: {
                     borderRadius: 8,
@@ -76,7 +69,7 @@ export default function TopServicesCard({ data, title = "Top 10 Applications" }:
                 <Activity className="w-4 h-4 text-emerald-400" /> {title}
             </h3>
             <div className="flex-1 w-full relative min-h-0">
-                <ReactECharts option={options} style={{ height: '280px', width: '100%' }} />
+                <ReactECharts option={options} style={{ height: DONUT_HEIGHT, width: '100%' }} />
             </div>
         </>
     );

@@ -1,6 +1,7 @@
 'use client';
 
 import ReactECharts from 'echarts-for-react';
+import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chartConstants';
 
 const COLORS: Record<string, string> = {
     TCP: '#3B82F6',
@@ -25,17 +26,13 @@ export default function ProtocolChart({ data }: { data: { proto: string; total_b
                 return `${params.marker}${params.name}<br/>Bandwidth: <b>${formatBytes(params.value)}</b> (${params.percent}%)`;
             }
         },
-        legend: {
-            orient: 'vertical',
-            left: 'left',
-            textStyle: { color: '#9CA3AF' },
-        },
+        legend: LEGEND_CONFIG,
         series: [
             {
                 name: 'Protocol',
                 type: 'pie',
-                radius: ['40%', '65%'],
-                center: ['65%', '50%'],
+                radius: DONUT_RADIUS,
+                center: DONUT_CENTER,
                 avoidLabelOverlap: false,
                 itemStyle: { borderRadius: 8, borderColor: '#111827', borderWidth: 2 },
                 label: { show: false },
@@ -50,5 +47,5 @@ export default function ProtocolChart({ data }: { data: { proto: string; total_b
         ]
     };
 
-    return <ReactECharts option={options} style={{ height: '220px', width: '100%' }} />;
+    return <ReactECharts option={options} style={{ height: DONUT_HEIGHT, width: '100%' }} />;
 }
