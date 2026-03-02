@@ -13,17 +13,19 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url);
     const service = url.searchParams.get('service');
+    const logType = url.searchParams.get('type') || 'stderr';
     const lines = parseInt(url.searchParams.get('lines') || '500', 10);
 
     const allowedServices = ['clickhouse', 'telegraf', 'nextjs'];
-    if (!service || !allowedServices.includes(service)) {
+    const allowedTypes = ['stdout', 'stderr'];
+    if (!service || !allowedServices.includes(service) || !allowedTypes.includes(logType)) {
         return NextResponse.json({ success: false, error: 'Invalid service' }, { status: 400 });
     }
 
     try {
         // Read the supervisord logs for the requested service
         // Since we are running inside docker managed by supervisord, we can use supervisorctl
-        const { stdout, stderr } = await execAsync(`supervisorctl tail -${lines} ${service} stderr`);
+        const { stdout, stderr } = await execAsync(`supervisorctl tail -${lines} ${service} ${logType}`);
         let logs = stderr || stdout;
 
         if (!logs) {

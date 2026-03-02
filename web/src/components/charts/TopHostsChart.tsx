@@ -39,9 +39,9 @@ export default function TopHostsChart({ data, title, onIpClick }: Props) {
             }
         },
         legend: {
-            orient: 'horizontal',
-            bottom: '0%',
-            left: 'center',
+            orient: 'vertical',
+            right: '0%',
+            top: 'middle',
             textStyle: { color: '#9CA3AF' },
             type: 'scroll',
         },
@@ -50,7 +50,7 @@ export default function TopHostsChart({ data, title, onIpClick }: Props) {
                 name: 'Bytes',
                 type: 'pie',
                 radius: ['45%', '70%'],
-                center: ['50%', '45%'],
+                center: ['30%', '50%'],
                 avoidLabelOverlap: false,
                 itemStyle: {
                     borderRadius: 10,

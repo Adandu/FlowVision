@@ -37,14 +37,14 @@ export default function Navbar() {
             <div className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
-                    <div className="flex items-center space-x-3">
+                    <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
                         <div className="bg-blue-500/20 p-2 rounded-lg">
                             <Activity className="h-6 w-6 text-blue-400" />
                         </div>
                         <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
                             FlowVision
                         </span>
-                    </div>
+                    </Link>
 
                     {/* Desktop Nav links */}
                     <div className="hidden md:flex items-center space-x-1">

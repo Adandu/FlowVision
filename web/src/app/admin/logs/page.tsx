@@ -9,7 +9,7 @@ import AdminSidebar from '@/components/AdminSidebar';
 export default function AdminLogsPage() {
     const router = useRouter();
     const [user, setUser] = useState<any>(null);
-    const [service, setService] = useState('nextjs');
+    const [activeTab, setActiveTab] = useState({ id: 'nextjs', type: 'stderr' });
     const [logs, setLogs] = useState('');
     const [loading, setLoading] = useState(true);
     const [autoRefresh, setAutoRefresh] = useState(false);
@@ -33,7 +33,7 @@ export default function AdminLogsPage() {
         if (!silent) setLoading(true);
         setError('');
         try {
-            const res = await fetch(`/api/admin/logs?service=${service}&lines=1000`);
+            const res = await fetch(`/api/admin/logs?service=${activeTab.id}&type=${activeTab.type}&lines=1000`);
             const data = await res.json();
             if (data.success) {
                 setLogs(data.logs);
@@ -62,7 +62,7 @@ export default function AdminLogsPage() {
         return () => {
             if (intervalId) clearInterval(intervalId);
         };
-    }, [service, user, autoRefresh]);
+    }, [activeTab, user, autoRefresh]);
 
     // Auto-scroll to bottom when new logs arrive (optional, but requested often for logs)
     useEffect(() => {
@@ -74,9 +74,10 @@ export default function AdminLogsPage() {
     if (!user) return null;
 
     const services = [
-        { id: 'nextjs', name: 'WebUI (NextJS)' },
-        { id: 'telegraf', name: 'Telegraf (Netflow)' },
-        { id: 'clickhouse', name: 'Database (ClickHouse)' },
+        { id: 'nextjs', type: 'stderr', name: 'WebUI (NextJS)' },
+        { id: 'telegraf', type: 'stdout', name: 'NetFlows' },
+        { id: 'telegraf', type: 'stderr', name: 'Telegraf' },
+        { id: 'clickhouse', type: 'stderr', name: 'Database (ClickHouse)' },
     ];
 
     return (
@@ -101,9 +102,9 @@ export default function AdminLogsPage() {
                             <div className="flex items-center gap-2">
                                 {services.map(s => (
                                     <button
-                                        key={s.id}
-                                        onClick={() => setService(s.id)}
-                                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${service === s.id
+                                        key={s.id + s.type}
+                                        onClick={() => setActiveTab({ id: s.id, type: s.type })}
+                                        className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeTab.id === s.id && activeTab.type === s.type
                                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
                                             : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
                                             }`}

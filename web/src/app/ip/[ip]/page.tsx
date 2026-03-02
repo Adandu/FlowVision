@@ -213,38 +213,38 @@ export default function IPDetailPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
                                     <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                        <ArrowUpRight className="w-4 h-4 text-blue-400" /> Outgoing IPs
+                                        <ArrowUpRight className="w-4 h-4 text-blue-400" /> Top 10 Outgoing
                                     </h3>
                                     <div className="h-64">
                                         {donuts.outgoing?.length > 0 ? (
-                                            <TopHostsChart data={donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes }))} title="Outgoing" />
+                                            <TopHostsChart data={donuts.outgoing.slice(0, 10).map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes }))} title="Outgoing" />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
                                     <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                        <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> Incoming IPs
+                                        <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> Top 10 Incoming
                                     </h3>
                                     <div className="h-64">
                                         {donuts.incoming?.length > 0 ? (
-                                            <TopHostsChart data={donuts.incoming.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes }))} title="Incoming" />
+                                            <TopHostsChart data={donuts.incoming.slice(0, 10).map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes }))} title="Incoming" />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
                                     <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                        <Activity className="w-4 h-4 text-purple-400" /> Top Ports
+                                        <Activity className="w-4 h-4 text-purple-400" /> Top 10 Services
                                     </h3>
                                     <div className="h-64">
                                         {donuts.topPorts?.length > 0 ? (
-                                            <TopPortsChart data={donuts.topPorts.map((d: any) => ({ port: d.dst_port, total_bytes: d.bytes }))} />
+                                            <TopPortsChart data={donuts.topPorts.slice(0, 10).map((d: any) => ({ port: d.dst_port, total_bytes: d.bytes }))} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
 
-                                {/* Services Widget */}
+                                {/* Applications Widget */}
                                 {donuts.topServices && donuts.topServices.length > 0 && (
-                                    <TopServicesCard data={donuts.topServices} />
+                                    <TopServicesCard data={donuts.topServices.slice(0, 10)} />
                                 )}
                             </div>
                         )}

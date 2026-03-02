@@ -118,33 +118,35 @@ export default function Dashboard() {
 
         {/* Protocol + Top Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Top Destinations */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
+            {data && <TopHostsChart data={data.topDestinations.slice(0, 10)} title="Top 10 Destinations" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
+          </div>
+
+          {/* Top Sources */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
+            {data && <TopHostsChart data={data.topSources.slice(0, 10)} title="Top 10 Sources" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
+          </div>
+
+          {/* Top Ports (now Services) */}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
+            <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Top 10 Services</h2>
+            <div className="flex-1 w-full relative">
+              {data && <TopPortsChart data={data.topPorts.slice(0, 10)} />}
+            </div>
+          </div>
+
           {/* Protocol Breakdown */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
             <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Protocol Breakdown</h2>
             {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} />}
           </div>
-
-          {/* Top Destinations */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
-            {data && <TopHostsChart data={data.topDestinations} title="Top Destinations" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
-          </div>
-
-          {/* Top Sources */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
-            {data && <TopHostsChart data={data.topSources} title="Top Sources" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
-          </div>
-
-          {/* Top Ports */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Top Applications</h2>
-            {data && <TopPortsChart data={data.topPorts} />}
-          </div>
         </div>
 
-        {/* Top Services */}
+        {/* Top Services (now Applications ASN) */}
         {data?.topServices && data.topServices.length > 0 && (
           <div className="w-full">
-            <TopServicesCard data={data.topServices} />
+            <TopServicesCard data={data.topServices.slice(0, 10)} />
           </div>
         )}
 
