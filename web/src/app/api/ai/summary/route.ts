@@ -94,31 +94,30 @@ async function getIPSnapshot(ip: string, interval: string): Promise<string> {
     }
 }
 
-async function callGemini(apiKey: string, prompt: string): Promise<string> {
+async function callGemini(apiKey: string, model: string, prompt: string): Promise<string> {
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-2.0-flash — current stable model supported by v1beta API
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-    const result = await model.generateContent(prompt);
+    const genModel = genAI.getGenerativeModel({ model: model || 'gemini-2.0-flash' });
+    const result = await genModel.generateContent(prompt);
     return result.response.text();
 }
 
-async function callClaude(apiKey: string, prompt: string): Promise<string> {
+async function callClaude(apiKey: string, model: string, prompt: string): Promise<string> {
     const Anthropic = (await import('@anthropic-ai/sdk')).default;
     const client = new Anthropic({ apiKey });
     const message = await client.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: model || 'claude-3-5-haiku-20241022',
         max_tokens: 1024,
         messages: [{ role: 'user', content: prompt }],
     });
     return (message.content[0] as any).text;
 }
 
-async function callOpenAI(apiKey: string, prompt: string): Promise<string> {
+async function callOpenAI(apiKey: string, model: string, prompt: string): Promise<string> {
     const OpenAI = (await import('openai')).default;
     const openai = new OpenAI({ apiKey });
     const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: model || 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 512,
     });
@@ -146,10 +145,16 @@ export async function GET(request: Request) {
         claude: settings.ai_claude_key,
         openai: settings.ai_openai_key,
     };
+    const modelMap: Record<string, string> = {
+        gemini: settings.ai_gemini_model || 'gemini-2.0-flash',
+        claude: settings.ai_claude_model || 'claude-3-5-haiku-20241022',
+        openai: settings.ai_openai_model || 'gpt-4o-mini',
+    };
     const apiKey = keyMap[provider];
     if (!apiKey) {
         return NextResponse.json({ error: `No API key configured for provider: ${provider}` }, { status: 503 });
     }
+    const model = modelMap[provider];
 
     let trafficData: string;
     let promptContext: string;
@@ -167,13 +172,13 @@ export async function GET(request: Request) {
     try {
         let summary: string;
         if (provider === 'gemini') {
-            summary = await callGemini(apiKey, prompt);
+            summary = await callGemini(apiKey, model, prompt);
         } else if (provider === 'claude') {
-            summary = await callClaude(apiKey, prompt);
+            summary = await callClaude(apiKey, model, prompt);
         } else {
-            summary = await callOpenAI(apiKey, prompt);
+            summary = await callOpenAI(apiKey, model, prompt);
         }
-        return NextResponse.json({ success: true, summary, provider });
+        return NextResponse.json({ success: true, summary, provider, model });
     } catch (err: any) {
         console.error('[AI Summary] Error calling provider:', err.message);
         return NextResponse.json({ error: `AI provider error: ${err.message}` }, { status: 500 });

@@ -19,11 +19,7 @@ function formatBytes(bytes: number) {
 
 export default function TopHostsChart({ data, title, onIpClick }: Props) {
     const options = {
-        title: {
-            text: title,
-            left: 'center',
-            textStyle: { color: '#E5E7EB', fontSize: 16, fontWeight: 'normal' }
-        },
+        // No ECharts title — the card header handles the title
         tooltip: {
             trigger: 'item',
             formatter: (params: any) => {
@@ -39,9 +35,7 @@ export default function TopHostsChart({ data, title, onIpClick }: Props) {
                 return `${params.marker}${params.name}<br/>Bandwidth: <b>${readable}</b> (${params.percent}%)${onIpClick ? '<br/><span style="color:#60A5FA;font-size:11px">Click to view details</span>' : ''}`;
             }
         },
-        legend: {
-            ...LEGEND_CONFIG,
-        },
+        legend: { ...LEGEND_CONFIG },
         series: [
             {
                 name: 'Bytes',
@@ -50,21 +44,21 @@ export default function TopHostsChart({ data, title, onIpClick }: Props) {
                 center: DONUT_CENTER,
                 avoidLabelOverlap: false,
                 itemStyle: {
-                    borderRadius: 10,
+                    borderRadius: 8,
                     borderColor: '#111827',
                     borderWidth: 2,
                     cursor: onIpClick ? 'pointer' : 'default',
                 },
-                label: { show: false, position: 'center' },
+                // No center/emphasis label — prevents text overflow on hover
+                label: { show: false },
                 emphasis: {
-                    label: { show: true, fontSize: 16, fontWeight: 'bold', color: '#F3F4F6' }
+                    itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' }
                 },
                 labelLine: { show: false },
-                // Map ip -> label for lookup when clicking
                 data: data.map(item => ({
                     value: item.total_bytes,
                     name: item.displayName || item.ip,
-                    realIp: item.ip // store real ip for navigation
+                    realIp: item.ip
                 }))
             }
         ]
@@ -72,7 +66,6 @@ export default function TopHostsChart({ data, title, onIpClick }: Props) {
 
     const onEvents = onIpClick ? {
         click: (params: any) => {
-            // Use realIp if available (alias case) otherwise fall back to name
             const ip = params.data?.realIp || params.name;
             if (ip) onIpClick(ip);
         }

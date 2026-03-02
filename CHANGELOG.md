@@ -4,59 +4,51 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.0] - 2026-03-02
+
+### Added
+- **AI Model Selection**: Admin → AI Integration now has a model dropdown for each provider. Users can choose from:
+  - **Gemini**: 2.0 Flash, 2.0 Flash Lite, 1.5 Pro, 1.5 Flash
+  - **Claude**: 3.5 Haiku, 3.5 Sonnet, 3 Haiku, 3 Opus
+  - **OpenAI**: GPT-4o Mini, GPT-4o, GPT-4 Turbo, GPT-3.5 Turbo
+  - Selected model persisted in ClickHouse settings and passed to the AI API on every call.
+
+### Fixed
+- **Donut charts overflow / inconsistent sizing**: Reduced chart height to 240px, donut radius to 40–65%, and center to 22%/50% so charts never exceed their card boundaries.
+- **TopHostsChart hover overflow**: Removed the ECharts built-in `title` element and the `emphasis.label` center text that rendered large IP addresses inside the donut hole on hover. Replaced with a subtle shadow emphasis.
+- **All 5 donut charts now pixel-identical**: Destinations, Sources, Services, Protocol, Applications share the same `chartConstants.ts` values.
+
+---
+
 ## [1.2.0] - 2026-03-02
 
 ### Added
 - **`/active-applications` page**: Dedicated page showing detected ASN/ISP application breakdown. Active Applications StatCard on the Dashboard now routes here instead of Active Services.
 
 ### Fixed
-- **Gemini AI 404 error**: Updated model from deprecated `gemini-1.5-flash` to `gemini-2.0-flash` which is the current stable API version.
-- **Donut chart layout inconsistency**: All five dashboard donut charts (Destinations, Sources, Services, Protocol, Applications) now share identical constants via `chartConstants.ts` — same height (280px), same pie center (24%/50%), same radius (45%–72%), and same legend position (left: 52%).
+- **Gemini AI 404 error**: Updated model from deprecated `gemini-1.5-flash` to `gemini-2.0-flash`.
+- **Donut chart layout inconsistency**: All five charts now share `chartConstants.ts` constants.
 - **Active Applications StatCard**: Fixed href from `/active-services` to `/active-applications`.
 
 ---
 
 ## [1.1.0] - 2026-03-02
 
-### Fixed
-- **Donut legend overlap**: Pinned pie chart center to 24% of canvas width and legend start to 52% — the two elements no longer collide at any browser width.
-- **IP Page → All Applications widget spanning 2 lines**: Wrapped the `TopServicesCard` in a proper `bg-gray-900 border rounded-xl` card container inside the donut grid, matching the other widgets.
-- **Active Applications StatCard not clickable**: Added `href=/active-services?interval=...` so it navigates like the other metric header cards.
-- **IP Aliases description text**: Replaced example alias "MasterChief" with "MyServer" to match the updated placeholder standard.
-- **Flow Log aliases missing after refactor**: Extended the `Flow` interface with optional `src_displayName` / `dst_displayName` fields; FlowTable now renders the alias label while keeping the real IP in the navigation link.
-- **Top 10 Applications widget double-card border**: Removed the internal card wrapper from `TopServicesCard` so the parent container in `page.tsx` provides the single consistent border.
-
 ### Added
-- **AI Integration** (Admin → AI Integration page): Toggle AI on/off, select provider (Google Gemini, Anthropic Claude, OpenAI ChatGPT), enter API key, and test connection. Settings persist in ClickHouse.
-- **AI Summary Widget** (`AISummaryWidget`): Glassmorphism-styled card shown at the top of the Dashboard and each IP detail page when AI is enabled and configured. Features animated loading dots, a collapse/expand toggle, and a refresh button. Silently hidden when AI is unconfigured.
-- **`/api/ai/summary` route**: Reads AI settings from ClickHouse, fetches live traffic snapshot, constructs a prompt, and calls the configured AI provider. Returns a 2-3 sentence network insight.
-- **Dashboard 5-widget grid**: Top 10 Destinations, Sources, Services, Protocol Breakdown, and Applications now in a single consistent `lg:grid-cols-5` row.
+- AI Integration (Admin → AI Integration page), AI Summary Widget, `/api/ai/summary` route, Dashboard 5-widget grid.
 
-### Changed
-- `applyAliases()` now stores alias as `displayName` field instead of overwriting the real `ip`/`src_ip`/`dst_ip` — preserving correct navigation while still showing human-friendly labels in charts and tables.
-- Top Applications widget is always rendered in the grid (no longer hidden by a `length > 0` guard).
+### Fixed
+- Donut legend overlap, IP Page Applications widget spanning 2 lines, Active Applications StatCard not clickable, IP Aliases description text, Flow Log aliases missing, Top 10 Applications double-card border.
 
 ---
 
 ## [1.0.0] - 2026-03-02
 
 ### Added
-- **Global GeoMap Tracking**: ECharts 3D Earth projection visualizing inbound/outbound traffic by geography.
-- **Application Services Detection**: ASN/ISP mapping classifying Netflow into known platforms (Netflix, Google Cloud, Meta/WhatsApp, Cloudflare, etc.) with an "Other" fallback bucket.
-- **Custom IP Aliases**: Human-readable server names persisted globally. Labels shown in charts; real IPs preserved for navigation.
-- **Active Applications StatCard**: New metric header counting unique detected application providers.
-- **Admin Logs Streaming Viewer**: NetFlows and WebUI log tabs using native `tail -n` for reliable line-based reading.
-- **Flow Log Pagination**: Dropdown selector (50 / 100 / 250 / 500 / 1000 flows).
+- Global GeoMap, Application Services Detection, Custom IP Aliases, Active Applications StatCard, Admin Logs Streaming, Flow Log Pagination.
 
 ### Changed
-- Port-based and ASN-based widgets converted to vertical-legend Donut Pie charts.
-- Dashboard widget grid reordered: Destinations → Sources → Services → Protocol → Applications.
-- IP detail page widgets show all historical records (not capped at 10) for the selected interval.
-- FlowVision navbar logo is now a clickable link back to the Dashboard.
-- IP Aliases form uses generic placeholders with IPv4/IPv6 format validation.
+- Port/ASN widgets converted to Donut charts, dashboard widget grid reordered, IP detail page shows all records, FlowVision logo clickable, IP Aliases generic placeholders.
 
 ### Fixed
-- **Inbound Traffic 0B**: Corrected SQL direction query so `inbound_bytes` sums flows where `src_ip` is public and `dst_ip` is private.
-- **Alias Click Navigation**: Clicking an aliased IP now routes to the correct real IP page.
-- **Admin Logs truncated to 6 lines**: Replaced `supervisorctl tail` with `tail -n 1000` on physical log files.
-- **Top 10 Applications widget missing from Dashboard**: Removed conditional `length > 0` guard.
+- Inbound Traffic 0B, Alias Click Navigation, Admin Logs truncated to 6 lines, Top 10 Applications widget missing.

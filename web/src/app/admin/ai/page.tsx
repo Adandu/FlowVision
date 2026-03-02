@@ -3,9 +3,36 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
-import { Sparkles, Key, CheckCircle, XCircle, Loader2, Save, ChevronDown } from 'lucide-react';
+import { Sparkles, Key, CheckCircle, XCircle, Loader2, Save, Cpu } from 'lucide-react';
 
 type Provider = 'gemini' | 'claude' | 'openai';
+
+const PROVIDER_MODELS: Record<Provider, { value: string; label: string }[]> = {
+    gemini: [
+        { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Recommended)' },
+        { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
+        { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+        { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+    ],
+    claude: [
+        { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (Recommended)' },
+        { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+        { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
+        { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+    ],
+    openai: [
+        { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Recommended)' },
+        { value: 'gpt-4o', label: 'GPT-4o' },
+        { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+        { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+    ],
+};
+
+const DEFAULT_MODELS: Record<Provider, string> = {
+    gemini: 'gemini-2.0-flash',
+    claude: 'claude-3-5-haiku-20241022',
+    openai: 'gpt-4o-mini',
+};
 
 const providers: { id: Provider; name: string; logo: string; desc: string }[] = [
     { id: 'gemini', name: 'Google Gemini', logo: '✦', desc: 'Fast, efficient model from Google. Recommended.' },
@@ -58,11 +85,16 @@ export default function AdminAIPage() {
             return;
         }
         setTestStatus(prev => ({ ...prev, [provider]: 'loading' }));
-        // Save current key first then test
+        const modelKey = `ai_${provider}_model`;
         await fetch('/api/admin/settings', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ai_enabled: 'true', ai_provider: provider, [`ai_${provider}_key`]: keyMap[provider] }),
+            body: JSON.stringify({
+                ai_enabled: 'true',
+                ai_provider: provider,
+                [`ai_${provider}_key`]: keyMap[provider],
+                [modelKey]: settings[modelKey] || DEFAULT_MODELS[provider],
+            }),
         });
         const res = await fetch(`/api/ai/summary?interval=1h&context=dashboard`);
         const data = await res.json();
@@ -70,6 +102,7 @@ export default function AdminAIPage() {
     };
 
     const keyForProvider = (p: Provider) => `ai_${p}_key`;
+    const modelForProvider = (p: Provider) => `ai_${p}_model`;
 
     return (
         <div className="min-h-screen bg-gray-950 pb-12">
@@ -127,24 +160,27 @@ export default function AdminAIPage() {
                                 </div>
                             </div>
 
-                            {/* API Keys */}
+                            {/* API Keys + Model Selection */}
                             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
                                 <div className="p-6 border-b border-gray-800">
-                                    <h3 className="text-base font-semibold text-gray-200">API Keys</h3>
+                                    <h3 className="text-base font-semibold text-gray-200">API Keys &amp; Model Selection</h3>
                                     <p className="text-gray-500 text-sm mt-1">Keys are stored securely in ClickHouse and never exposed to the frontend.</p>
                                 </div>
                                 <div className="divide-y divide-gray-800">
                                     {providers.map(p => {
                                         const status = testStatus[p.id];
                                         const isActive = activeProvider === p.id;
+                                        const currentModel = settings[modelForProvider(p.id)] || DEFAULT_MODELS[p.id];
                                         return (
                                             <div key={p.id} className={`p-6 ${isActive ? 'bg-violet-950/20' : ''}`}>
-                                                <div className="flex items-center gap-2 mb-3">
+                                                <div className="flex items-center gap-2 mb-4">
                                                     <Key className="w-4 h-4 text-gray-400" />
                                                     <span className="text-sm font-medium text-gray-300">{p.name}</span>
                                                     {isActive && <span className="text-[10px] px-1.5 py-0.5 bg-violet-500/20 text-violet-400 rounded-full border border-violet-500/30">Active</span>}
                                                 </div>
-                                                <div className="flex gap-3">
+
+                                                {/* API Key row */}
+                                                <div className="flex gap-3 mb-3">
                                                     <input
                                                         type="password"
                                                         placeholder={`Enter your ${p.name} API key...`}
@@ -164,8 +200,24 @@ export default function AdminAIPage() {
                                                         Test
                                                     </button>
                                                 </div>
-                                                {status === 'ok' && <p className="text-xs text-emerald-400 mt-1.5">✓ Connection successful</p>}
-                                                {status === 'error' && <p className="text-xs text-red-400 mt-1.5">✗ Connection failed — check your API key</p>}
+
+                                                {/* Model Selection row */}
+                                                <div className="flex items-center gap-3">
+                                                    <Cpu className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                                    <select
+                                                        value={currentModel}
+                                                        onChange={e => updateSetting(modelForProvider(p.id), e.target.value)}
+                                                        className="flex-1 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-1 focus:ring-violet-500 appearance-none cursor-pointer"
+                                                    >
+                                                        {PROVIDER_MODELS[p.id].map(m => (
+                                                            <option key={m.value} value={m.value}>{m.label}</option>
+                                                        ))}
+                                                    </select>
+                                                    <span className="text-xs text-gray-600 whitespace-nowrap">Model</span>
+                                                </div>
+
+                                                {status === 'ok' && <p className="text-xs text-emerald-400 mt-2">✓ Connection successful</p>}
+                                                {status === 'error' && <p className="text-xs text-red-400 mt-2">✗ Connection failed — check your API key and model</p>}
                                             </div>
                                         );
                                     })}
