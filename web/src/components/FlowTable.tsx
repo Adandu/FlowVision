@@ -16,6 +16,8 @@ interface Flow {
     packets: number;
     src_asn?: string;
     dst_asn?: string;
+    src_displayName?: string;
+    dst_displayName?: string;
 }
 
 function formatBytes(bytes: number) {
@@ -118,12 +120,12 @@ export default function FlowTable({ flows }: { flows: Flow[] }) {
                                 </td>
                                 <td className="px-4 py-2.5">
                                     <Link href={`/ip/${flow.src_ip}`} className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs">
-                                        {flow.src_ip} {flow.src_asn ? <span className="text-gray-500 font-sans">({flow.src_asn.replace(/^AS\d+\s+/, '')})</span> : ''}
+                                        {flow.src_displayName || flow.src_ip} {!flow.src_displayName && flow.src_asn ? <span className="text-gray-500 font-sans">({flow.src_asn.replace(/^AS\d+\s+/, '')})</span> : ''}
                                     </Link>
                                 </td>
                                 <td className="px-4 py-2.5">
                                     <Link href={`/ip/${flow.dst_ip}`} className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs">
-                                        {flow.dst_ip} {flow.dst_asn ? <span className="text-gray-500 font-sans">({flow.dst_asn.replace(/^AS\d+\s+/, '')})</span> : ''}
+                                        {flow.dst_displayName || flow.dst_ip} {!flow.dst_displayName && flow.dst_asn ? <span className="text-gray-500 font-sans">({flow.dst_asn.replace(/^AS\d+\s+/, '')})</span> : ''}
                                     </Link>
                                 </td>
                                 <td className="px-4 py-2.5">
