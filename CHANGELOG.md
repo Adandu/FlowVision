@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.0] - 2026-03-02
+
+### Added
+- **`/active-applications` page**: Dedicated page showing detected ASN/ISP application breakdown. Active Applications StatCard on the Dashboard now routes here instead of Active Services.
+
+### Fixed
+- **Gemini AI 404 error**: Updated model from deprecated `gemini-1.5-flash` to `gemini-2.0-flash` which is the current stable API version.
+- **Donut chart layout inconsistency**: All five dashboard donut charts (Destinations, Sources, Services, Protocol, Applications) now share identical constants via `chartConstants.ts` — same height (280px), same pie center (24%/50%), same radius (45%–72%), and same legend position (left: 52%).
+- **Active Applications StatCard**: Fixed href from `/active-services` to `/active-applications`.
+
+---
+
 ## [1.1.0] - 2026-03-02
 
 ### Fixed
