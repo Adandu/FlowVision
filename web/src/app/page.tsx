@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Activity, Globe, Clock, Server, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, List } from 'lucide-react';
+import { Activity, Globe, Clock, Server, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, List, Lock } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
 
@@ -26,6 +26,31 @@ export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [flows, setFlows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+
+  // Check authentication status
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(r => r.json())
+      .then(j => setIsLoggedIn(!!(j.success && j.user)))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
+
+  // Overlay shown on sensitive widgets for unauthenticated users
+  const GuestOverlay = () => (
+    <div className="absolute inset-0 z-10 rounded-xl overflow-hidden flex flex-col items-center justify-center gap-3"
+      style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', background: 'rgba(9,11,20,0.55)' }}>
+      <div className="p-3 bg-gray-800/80 rounded-full border border-gray-700/60">
+        <Lock className="w-5 h-5 text-gray-400" />
+      </div>
+      <p className="text-sm font-medium text-gray-300">Sign in to view details</p>
+      <Link href="/login"
+        className="mt-1 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-lg shadow-blue-500/20">
+        Login
+      </Link>
+    </div>
+  );
+
 
   const intervals: { label: string; value: IntervalType | 'Live' }[] = [
     { label: 'Live', value: 'Live' },
@@ -140,7 +165,8 @@ export default function Dashboard() {
           </div>
 
           {/* Top Ports (now Services) */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
+          <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full overflow-hidden">
+            {isLoggedIn === false && <GuestOverlay />}
             <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><Server className="w-4 h-4 text-purple-400" />Top 10 Services</h2>
             <div className="flex-1 w-full relative">
               {data && <TopPortsChart data={data.topPorts.slice(0, 10)} />}
@@ -148,13 +174,15 @@ export default function Dashboard() {
           </div>
 
           {/* Protocol Breakdown */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
+          <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl overflow-hidden">
+            {isLoggedIn === false && <GuestOverlay />}
             <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowLeftRight className="w-4 h-4 text-amber-400" />Protocol Breakdown</h2>
             {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} />}
           </div>
 
           {/* Top Applications (ASN-based) - always rendered even if empty */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
+          <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full overflow-hidden">
+            {isLoggedIn === false && <GuestOverlay />}
             <TopServicesCard data={data?.topServices?.slice(0, 10) || []} title="Top 10 Applications" />
           </div>
         </div>
