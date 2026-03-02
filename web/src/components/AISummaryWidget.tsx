@@ -11,6 +11,7 @@ interface Props {
 }
 
 export default function AISummaryWidget({ interval, context, ip }: Props) {
+    // ALL hooks must come before any conditional return (Rules of Hooks)
     const isLoggedIn = useAuth();
     const [summary, setSummary] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -19,23 +20,22 @@ export default function AISummaryWidget({ interval, context, ip }: Props) {
     const [visible, setVisible] = useState(true);
     const [collapsed, setCollapsed] = useState(false);
 
-    // Don't render at all for guests — auth status null means still loading, so wait
-    if (isLoggedIn === false) return null;
-
     const fetchSummary = useCallback(async () => {
+        // Skip fetch entirely for guests or while auth is loading
+        if (!isLoggedIn) { setLoading(false); return; }
         setLoading(true);
         setError('');
         try {
             const params = new URLSearchParams({ interval, context });
             if (ip) params.set('ip', ip);
             const res = await fetch(`/api/ai/summary?${params.toString()}`);
+            if (res.status === 401) { setVisible(false); setLoading(false); return; }
             const data = await res.json();
             if (data.summary) {
                 setSummary(data.summary);
                 setProvider(data.provider || '');
                 setVisible(true);
             } else if (data.error && (data.error.includes('not enabled') || data.error.includes('No API key'))) {
-                // AI not configured — silently hide
                 setVisible(false);
             } else {
                 setError(data.error || 'Failed to get AI summary');
@@ -45,12 +45,14 @@ export default function AISummaryWidget({ interval, context, ip }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [interval, context, ip]);
+    }, [interval, context, ip, isLoggedIn]);
 
     useEffect(() => {
         fetchSummary();
     }, [fetchSummary]);
 
+    // Conditional returns come AFTER all hook declarations
+    if (isLoggedIn === false) return null;
     if (!visible && !loading) return null;
 
     const providerLabel: Record<string, string> = {
@@ -101,7 +103,7 @@ export default function AISummaryWidget({ interval, context, ip }: Props) {
                         <button
                             onClick={() => setCollapsed(!collapsed)}
                             className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
-                            title={collapsed ? "Expand" : "Collapse"}
+                            title={collapsed ? 'Expand' : 'Collapse'}
                         >
                             {collapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
                         </button>
