@@ -125,7 +125,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Top Destinations */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Top 10 Destinations</h2>
+            <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowUpRight className="w-4 h-4 text-blue-400" />Top 10 Destinations</h2>
             <div className="flex-1 w-full relative">
               {data && <TopHostsChart data={data.topDestinations.slice(0, 10)} title="Top 10 Destinations" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
             </div>
@@ -133,7 +133,7 @@ export default function Dashboard() {
 
           {/* Top Sources */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Top 10 Sources</h2>
+            <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowDownLeft className="w-4 h-4 text-emerald-400" />Top 10 Sources</h2>
             <div className="flex-1 w-full relative">
               {data && <TopHostsChart data={data.topSources.slice(0, 10)} title="Top 10 Sources" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
             </div>
@@ -141,7 +141,7 @@ export default function Dashboard() {
 
           {/* Top Ports (now Services) */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Top 10 Services</h2>
+            <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><Server className="w-4 h-4 text-purple-400" />Top 10 Services</h2>
             <div className="flex-1 w-full relative">
               {data && <TopPortsChart data={data.topPorts.slice(0, 10)} />}
             </div>
@@ -149,7 +149,7 @@ export default function Dashboard() {
 
           {/* Protocol Breakdown */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Protocol Breakdown</h2>
+            <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowLeftRight className="w-4 h-4 text-amber-400" />Protocol Breakdown</h2>
             {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} />}
           </div>
 

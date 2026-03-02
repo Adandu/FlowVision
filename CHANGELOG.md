@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.2] - 2026-03-02
+
+### Fixed
+- **Dashboard widget icons**: Added lucide-react icons to all Top 10 widget headers — `ArrowUpRight` (blue) for Destinations, `ArrowDownLeft` (emerald) for Sources, `Server` (purple) for Services, `ArrowLeftRight` (amber) for Protocol Breakdown — matching the existing `Activity` icon on Top 10 Applications.
+
+---
+
 ## [1.3.1] - 2026-03-02
 
 ### Fixed
