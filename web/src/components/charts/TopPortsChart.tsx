@@ -11,7 +11,9 @@ function formatBytes(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export default function TopPortsChart({ data }: { data: { port: number | string; total_bytes: number }[] }) {
+const REDACTED = '████';
+
+export default function TopPortsChart({ data, isGuest = false }: { data: { port: number | string; total_bytes: number }[]; isGuest?: boolean }) {
     const sortedData = [...data].sort((a, b) => b.total_bytes - a.total_bytes);
 
     const options = {
@@ -19,7 +21,7 @@ export default function TopPortsChart({ data }: { data: { port: number | string;
             trigger: 'item',
             formatter: (params: any) => {
                 const p = params.data;
-                return `${params.marker} ${p.name}<br/>Traffic: <b>${formatBytes(p.value)}</b>`;
+                return `${params.marker} ${p.name}<br/>Traffic: <b>${isGuest ? REDACTED : formatBytes(p.value)}</b>`;
             }
         },
         legend: LEGEND_CONFIG,
@@ -37,8 +39,9 @@ export default function TopPortsChart({ data }: { data: { port: number | string;
                 },
                 label: { show: false },
                 labelLine: { show: false },
-                data: sortedData.map(item => ({
-                    name: String(item.port),
+                data: sortedData.map((item, i) => ({
+                    // When guest, replace port name with redacted block — use index suffix to keep names unique
+                    name: isGuest ? `${REDACTED}${i > 0 ? ' '.repeat(i) : ''}` : String(item.port),
                     value: item.total_bytes
                 }))
             }

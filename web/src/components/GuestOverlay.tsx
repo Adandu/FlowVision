@@ -4,19 +4,20 @@ import Link from 'next/link';
 import { Lock } from 'lucide-react';
 
 /**
- * Semi-transparent frosted-glass overlay shown on sensitive widgets for
- * unauthenticated (guest) users.
+ * Semi-transparent frosted-glass overlay for unauthenticated (guest) users.
+ * Data behind it is already redacted to ████ so the overlay just needs to
+ * communicate "login required" — it no longer needs to be opaque.
  *
- * The parent container MUST have `position: relative` and `overflow: hidden`.
+ * Parent container MUST have `position: relative` and `overflow: hidden`.
  */
 export default function GuestOverlay() {
     return (
         <div
-            className="absolute inset-0 z-10 rounded-xl flex flex-col items-center justify-center gap-3"
+            className="absolute inset-0 z-20 rounded-xl flex flex-col items-center justify-center gap-3"
             style={{
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
-                background: 'rgba(9,11,20,0.55)',
+                background: 'rgba(9, 11, 20, 0.55)',
             }}
         >
             <div className="p-3 bg-gray-800/80 rounded-full border border-gray-700/60">

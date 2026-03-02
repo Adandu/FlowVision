@@ -247,7 +247,7 @@ export default function IPDetailPage() {
                                     </h3>
                                     <div className="h-64">
                                         {donuts.topPorts?.length > 0 ? (
-                                            <TopPortsChart data={donuts.topPorts.map((d: any) => ({ port: d.dst_port, total_bytes: d.bytes }))} />
+                                            <TopPortsChart data={donuts.topPorts.map((d: any) => ({ port: d.dst_port, total_bytes: d.bytes }))} isGuest={isLoggedIn === false} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
@@ -256,7 +256,7 @@ export default function IPDetailPage() {
                                 <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl flex flex-col h-full overflow-hidden">
                                     {isLoggedIn === false && <GuestOverlay />}
                                     {donuts.topServices && donuts.topServices.length > 0 ? (
-                                        <TopServicesCard data={donuts.topServices} title="All Applications" />
+                                        <TopServicesCard data={donuts.topServices} title="All Applications" isGuest={isLoggedIn === false} />
                                     ) : (
                                         <>
                                             <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
@@ -275,7 +275,7 @@ export default function IPDetailPage() {
                         <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-4 shadow-xl overflow-hidden">
                             {isLoggedIn === false && <GuestOverlay />}
                             <h3 className="text-base font-semibold text-gray-200 mb-4 px-2">Flow Log Table</h3>
-                            <FlowTable flows={data.recentFlows || []} />
+                            <FlowTable flows={data.recentFlows || []} isGuest={isLoggedIn === false} />
                         </div>
                     </>
                 )}

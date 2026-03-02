@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Sparkles, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Props {
     interval: string;
@@ -10,12 +11,16 @@ interface Props {
 }
 
 export default function AISummaryWidget({ interval, context, ip }: Props) {
+    const isLoggedIn = useAuth();
     const [summary, setSummary] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>('');
     const [provider, setProvider] = useState<string>('');
     const [visible, setVisible] = useState(true);
     const [collapsed, setCollapsed] = useState(false);
+
+    // Don't render at all for guests — auth status null means still loading, so wait
+    if (isLoggedIn === false) return null;
 
     const fetchSummary = useCallback(async () => {
         setLoading(true);

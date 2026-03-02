@@ -7,6 +7,7 @@ import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chart
 interface Props {
     data: { service: string; total_bytes: number; color: string }[];
     title?: string;
+    isGuest?: boolean;
 }
 
 function formatBytes(bytes: number) {
@@ -17,7 +18,9 @@ function formatBytes(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export default function TopServicesCard({ data, title = "Top 10 Applications" }: Props) {
+const REDACTED = '████';
+
+export default function TopServicesCard({ data, title = 'Top 10 Applications', isGuest = false }: Props) {
     if (!data || data.length === 0) {
         return (
             <>
@@ -36,7 +39,7 @@ export default function TopServicesCard({ data, title = "Top 10 Applications" }:
             trigger: 'item',
             formatter: (params: any) => {
                 const item = params.data;
-                return `${params.marker} ${item.name}<br/>Traffic: <b>${formatBytes(item.value)}</b>`;
+                return `${params.marker} ${item.name}<br/>Traffic: <b>${isGuest ? REDACTED : formatBytes(item.value)}</b>`;
             }
         },
         legend: LEGEND_CONFIG,
@@ -54,8 +57,8 @@ export default function TopServicesCard({ data, title = "Top 10 Applications" }:
                 },
                 label: { show: false },
                 labelLine: { show: false },
-                data: data.map(d => ({
-                    name: d.service,
+                data: data.map((d, i) => ({
+                    name: isGuest ? `${REDACTED}${i > 0 ? ' '.repeat(i) : ''}` : d.service,
                     value: d.total_bytes,
                     itemStyle: { color: d.color }
                 }))

@@ -149,7 +149,7 @@ export default function Dashboard() {
             {isLoggedIn === false && <GuestOverlay />}
             <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><Server className="w-4 h-4 text-purple-400" />Top 10 Services</h2>
             <div className="flex-1 w-full relative">
-              {data && <TopPortsChart data={data.topPorts.slice(0, 10)} />}
+              {data && <TopPortsChart data={data.topPorts.slice(0, 10)} isGuest={isLoggedIn === false} />}
             </div>
           </div>
 
@@ -157,13 +157,13 @@ export default function Dashboard() {
           <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl overflow-hidden">
             {isLoggedIn === false && <GuestOverlay />}
             <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowLeftRight className="w-4 h-4 text-amber-400" />Protocol Breakdown</h2>
-            {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} />}
+            {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} isGuest={isLoggedIn === false} />}
           </div>
 
           {/* Top Applications (ASN-based) - always rendered even if empty */}
           <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full overflow-hidden">
             {isLoggedIn === false && <GuestOverlay />}
-            <TopServicesCard data={data?.topServices?.slice(0, 10) || []} title="Top 10 Applications" />
+            <TopServicesCard data={data?.topServices?.slice(0, 10) || []} title="Top 10 Applications" isGuest={isLoggedIn === false} />
           </div>
         </div>
 
@@ -179,14 +179,15 @@ export default function Dashboard() {
         </div>
 
         {/* Flow Table */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
+        <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl overflow-hidden">
+          {isLoggedIn === false && <GuestOverlay />}
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
               <List className="w-5 h-5 text-gray-400" /> Recent Flows
             </h2>
             <Link href="/flow-log" className="text-sm text-blue-400 hover:text-blue-300 hover:underline">View all →</Link>
           </div>
-          {flows.length > 0 && <FlowTable flows={flows} />}
+          {flows.length > 0 && <FlowTable flows={flows} isGuest={isLoggedIn === false} />}
           {flows.length === 0 && !loading && <p className="text-gray-500 text-sm text-center py-8">No flows recorded yet</p>}
         </div>
       </main>
