@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Activity, Globe, Clock, Server, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, List } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import GuestOverlay from '@/components/GuestOverlay';
 import Navbar from '@/components/Navbar';
 import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
 
@@ -127,8 +126,7 @@ export default function Dashboard() {
         {/* Protocol + Top Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Top Destinations */}
-          <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full overflow-hidden">
-            {isLoggedIn === false && <GuestOverlay />}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
             <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowUpRight className="w-4 h-4 text-blue-400" />Top 10 Destinations</h2>
             <div className="flex-1 w-full relative">
               {data && <TopHostsChart data={data.topDestinations.slice(0, 10)} title="Top 10 Destinations" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
@@ -136,8 +134,7 @@ export default function Dashboard() {
           </div>
 
           {/* Top Sources */}
-          <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full overflow-hidden">
-            {isLoggedIn === false && <GuestOverlay />}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
             <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowDownLeft className="w-4 h-4 text-emerald-400" />Top 10 Sources</h2>
             <div className="flex-1 w-full relative">
               {data && <TopHostsChart data={data.topSources.slice(0, 10)} title="Top 10 Sources" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
@@ -145,8 +142,7 @@ export default function Dashboard() {
           </div>
 
           {/* Top Ports (now Services) */}
-          <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full overflow-hidden">
-            {isLoggedIn === false && <GuestOverlay />}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
             <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><Server className="w-4 h-4 text-purple-400" />Top 10 Services</h2>
             <div className="flex-1 w-full relative">
               {data && <TopPortsChart data={data.topPorts.slice(0, 10)} isGuest={isLoggedIn === false} />}
@@ -154,15 +150,13 @@ export default function Dashboard() {
           </div>
 
           {/* Protocol Breakdown */}
-          <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl overflow-hidden">
-            {isLoggedIn === false && <GuestOverlay />}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
             <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowLeftRight className="w-4 h-4 text-amber-400" />Protocol Breakdown</h2>
             {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} isGuest={isLoggedIn === false} />}
           </div>
 
           {/* Top Applications (ASN-based) - always rendered even if empty */}
-          <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full overflow-hidden">
-            {isLoggedIn === false && <GuestOverlay />}
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
             <TopServicesCard data={data?.topServices?.slice(0, 10) || []} title="Top 10 Applications" isGuest={isLoggedIn === false} />
           </div>
         </div>
@@ -178,9 +172,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Flow Table */}
-        <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl overflow-hidden">
-          {isLoggedIn === false && <GuestOverlay />}
+        {/* Flow Table — no overlay so IPs remain clickable for guests */}
+        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
               <List className="w-5 h-5 text-gray-400" /> Recent Flows

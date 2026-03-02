@@ -129,15 +129,15 @@ export default function FlowTable({ flows, isGuest = false }: { flows: Flow[]; i
                                     </Link>
                                 </td>
                                 <td className="px-4 py-2.5">
-                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isGuest ? 'text-gray-600 bg-gray-800' : (PROTOCOL_COLORS[flow.protocol] || PROTOCOL_COLORS.Other)}`}>
-                                        {isGuest ? '████' : flow.protocol}
+                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isGuest ? 'text-gray-400 bg-gray-800' : (PROTOCOL_COLORS[flow.protocol] || PROTOCOL_COLORS.Other)}`}>
+                                        {isGuest ? '*****' : flow.protocol}
                                     </span>
                                 </td>
                                 <td className="px-4 py-2.5 text-gray-300 font-mono text-xs">
-                                    {isGuest ? <span className="text-gray-600">████</span> : <>{flow.dst_port} <span className="text-gray-500">({getAppName(flow.dst_port)})</span></>}
+                                    {isGuest ? <span className="text-gray-400 font-mono">*****</span> : <>{flow.dst_port} <span className="text-gray-500">({getAppName(flow.dst_port)})</span></>}
                                 </td>
-                                <td className="px-4 py-2.5 text-gray-300 text-xs">{isGuest ? <span className="text-gray-600">████</span> : formatBytes(flow.bytes)}</td>
-                                <td className="px-4 py-2.5 text-gray-400 text-xs">{isGuest ? <span className="text-gray-600">████</span> : flow.packets}</td>
+                                <td className="px-4 py-2.5 text-gray-300 text-xs">{isGuest ? <span className="text-gray-400">*****</span> : formatBytes(flow.bytes)}</td>
+                                <td className="px-4 py-2.5 text-gray-400 text-xs">{isGuest ? <span className="text-gray-400">*****</span> : flow.packets}</td>
                             </tr>
                         ))}
                         {page_data.length === 0 && (

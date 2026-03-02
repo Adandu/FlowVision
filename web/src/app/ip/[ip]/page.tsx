@@ -8,7 +8,6 @@ import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle 
 import Navbar from '@/components/Navbar';
 import { useTimezone, formatTimestamp } from '@/lib/timezone';
 import { useAuth } from '@/hooks/useAuth';
-import GuestOverlay from '@/components/GuestOverlay';
 
 const BandwidthChart = dynamic(() => import('@/components/charts/BandwidthChart'), { ssr: false });
 const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
@@ -218,8 +217,7 @@ export default function IPDetailPage() {
                         {/* 4. Donut Graphs & Services */}
                         {donuts && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl overflow-hidden">
-                                    {isLoggedIn === false && <GuestOverlay />}
+                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
                                     <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                         <ArrowUpRight className="w-4 h-4 text-blue-400" /> All Outgoing
                                     </h3>
@@ -229,8 +227,7 @@ export default function IPDetailPage() {
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
-                                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl overflow-hidden">
-                                    {isLoggedIn === false && <GuestOverlay />}
+                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
                                     <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                         <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> All Incoming
                                     </h3>
@@ -240,8 +237,7 @@ export default function IPDetailPage() {
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
-                                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl overflow-hidden">
-                                    {isLoggedIn === false && <GuestOverlay />}
+                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
                                     <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                         <Activity className="w-4 h-4 text-purple-400" /> All Services
                                     </h3>
@@ -253,8 +249,7 @@ export default function IPDetailPage() {
                                 </div>
 
                                 {/* Applications Widget - in grid */}
-                                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl flex flex-col h-full overflow-hidden">
-                                    {isLoggedIn === false && <GuestOverlay />}
+                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl flex flex-col h-full">
                                     {donuts.topServices && donuts.topServices.length > 0 ? (
                                         <TopServicesCard data={donuts.topServices} title="All Applications" isGuest={isLoggedIn === false} />
                                     ) : (
@@ -271,9 +266,8 @@ export default function IPDetailPage() {
                             </div>
                         )}
 
-                        {/* 5. Recent Flows Table */}
-                        <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-4 shadow-xl overflow-hidden">
-                            {isLoggedIn === false && <GuestOverlay />}
+                        {/* 5. Recent Flows Table — no overlay so IPs remain clickable */}
+                        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 shadow-xl">
                             <h3 className="text-base font-semibold text-gray-200 mb-4 px-2">Flow Log Table</h3>
                             <FlowTable flows={data.recentFlows || []} isGuest={isLoggedIn === false} />
                         </div>

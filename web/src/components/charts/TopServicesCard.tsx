@@ -18,7 +18,7 @@ function formatBytes(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-const REDACTED = '████';
+const mask = (i: number) => '*'.repeat(5 + (i % 3));
 
 export default function TopServicesCard({ data, title = 'Top 10 Applications', isGuest = false }: Props) {
     if (!data || data.length === 0) {
@@ -39,7 +39,7 @@ export default function TopServicesCard({ data, title = 'Top 10 Applications', i
             trigger: 'item',
             formatter: (params: any) => {
                 const item = params.data;
-                return `${params.marker} ${item.name}<br/>Traffic: <b>${isGuest ? REDACTED : formatBytes(item.value)}</b>`;
+                return `${params.marker} ${item.name}<br/>Traffic: <b>${isGuest ? '*****' : formatBytes(item.value)}</b>`;
             }
         },
         legend: LEGEND_CONFIG,
@@ -50,15 +50,11 @@ export default function TopServicesCard({ data, title = 'Top 10 Applications', i
                 radius: DONUT_RADIUS,
                 center: DONUT_CENTER,
                 avoidLabelOverlap: false,
-                itemStyle: {
-                    borderRadius: 8,
-                    borderColor: '#111827',
-                    borderWidth: 2
-                },
+                itemStyle: { borderRadius: 8, borderColor: '#111827', borderWidth: 2 },
                 label: { show: false },
                 labelLine: { show: false },
                 data: data.map((d, i) => ({
-                    name: isGuest ? `${REDACTED}${i > 0 ? ' '.repeat(i) : ''}` : d.service,
+                    name: isGuest ? mask(i) : d.service,
                     value: d.total_bytes,
                     itemStyle: { color: d.color }
                 }))

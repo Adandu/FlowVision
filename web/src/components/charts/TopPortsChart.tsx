@@ -11,7 +11,8 @@ function formatBytes(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-const REDACTED = '████';
+// Use asterisks — block chars (████) don't render in ECharts default font
+const mask = (i: number) => '*'.repeat(5 + (i % 3)); // *****  ******  *******  cycling
 
 export default function TopPortsChart({ data, isGuest = false }: { data: { port: number | string; total_bytes: number }[]; isGuest?: boolean }) {
     const sortedData = [...data].sort((a, b) => b.total_bytes - a.total_bytes);
@@ -21,7 +22,7 @@ export default function TopPortsChart({ data, isGuest = false }: { data: { port:
             trigger: 'item',
             formatter: (params: any) => {
                 const p = params.data;
-                return `${params.marker} ${p.name}<br/>Traffic: <b>${isGuest ? REDACTED : formatBytes(p.value)}</b>`;
+                return `${params.marker} ${p.name}<br/>Traffic: <b>${isGuest ? '*****' : formatBytes(p.value)}</b>`;
             }
         },
         legend: LEGEND_CONFIG,
@@ -32,16 +33,11 @@ export default function TopPortsChart({ data, isGuest = false }: { data: { port:
                 radius: DONUT_RADIUS,
                 center: DONUT_CENTER,
                 avoidLabelOverlap: false,
-                itemStyle: {
-                    borderRadius: 8,
-                    borderColor: '#111827',
-                    borderWidth: 2
-                },
+                itemStyle: { borderRadius: 8, borderColor: '#111827', borderWidth: 2 },
                 label: { show: false },
                 labelLine: { show: false },
                 data: sortedData.map((item, i) => ({
-                    // When guest, replace port name with redacted block — use index suffix to keep names unique
-                    name: isGuest ? `${REDACTED}${i > 0 ? ' '.repeat(i) : ''}` : String(item.port),
+                    name: isGuest ? mask(i) : String(item.port),
                     value: item.total_bytes
                 }))
             }

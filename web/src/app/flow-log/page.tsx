@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/useAuth';
-import GuestOverlay from '@/components/GuestOverlay';
 
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
 
@@ -49,10 +48,10 @@ export default function FlowLogPage() {
                     </div>
                 </div>
 
-                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl overflow-hidden">
-                    {isLoggedIn === false && <GuestOverlay />}
+                {/* No overlay — data is redacted inline via isGuest prop */}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
                     {loading && <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading flows…</p>}
-                    {!loading && <FlowTable flows={flows} />}
+                    {!loading && <FlowTable flows={flows} isGuest={isLoggedIn === false} />}
                 </div>
             </main>
         </div>

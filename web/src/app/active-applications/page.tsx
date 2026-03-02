@@ -7,7 +7,6 @@ import { Activity, ChevronLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import nextDynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/useAuth';
-import GuestOverlay from '@/components/GuestOverlay';
 
 const TopServicesCard = nextDynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
 
@@ -64,10 +63,9 @@ function ActiveApplicationsContent() {
                     {loading && <div className="animate-pulse w-3 h-3 rounded-full bg-orange-500 ml-4" />}
                 </div>
 
-                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[500px] flex flex-col overflow-hidden">
-                    {isLoggedIn === false && <GuestOverlay />}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[500px] flex flex-col">
                     {data?.topServices && data.topServices.length > 0 ? (
-                        <TopServicesCard data={data.topServices} title="All Detected Applications" />
+                        <TopServicesCard data={data.topServices} title="All Detected Applications" isGuest={isLoggedIn === false} />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-500">
                             <Activity className="w-10 h-10 opacity-40" />

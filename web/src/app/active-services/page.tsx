@@ -7,7 +7,6 @@ import { Server, ChevronLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import nextDynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/useAuth';
-import GuestOverlay from '@/components/GuestOverlay';
 
 const TopPortsChart = nextDynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
 
@@ -63,9 +62,8 @@ function ActiveServicesContent() {
                     {loading && <div className="animate-pulse w-3 h-3 rounded-full bg-blue-500 ml-4" />}
                 </div>
 
-                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[500px] overflow-hidden">
-                    {isLoggedIn === false && <GuestOverlay />}
-                    {data?.topPorts && <TopPortsChart data={data.topPorts} />}
+                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[500px]">
+                    {data?.topPorts && <TopPortsChart data={data.topPorts} isGuest={isLoggedIn === false} />}
                 </div>
             </main>
         </div>

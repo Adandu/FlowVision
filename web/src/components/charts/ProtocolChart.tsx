@@ -18,14 +18,14 @@ function formatBytes(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-const REDACTED = '████';
+const mask = (i: number) => '*'.repeat(5 + (i % 3));
 
 export default function ProtocolChart({ data, isGuest = false }: { data: { proto: string; total_bytes: number }[]; isGuest?: boolean }) {
     const options = {
         tooltip: {
             trigger: 'item',
             formatter: (params: any) => {
-                return `${params.marker}${params.name}<br/>Bandwidth: <b>${isGuest ? REDACTED : formatBytes(params.value)}</b> (${params.percent}%)`;
+                return `${params.marker}${params.name}<br/>Bandwidth: <b>${isGuest ? '*****' : formatBytes(params.value)}</b> (${params.percent}%)`;
             }
         },
         legend: LEGEND_CONFIG,
@@ -41,8 +41,7 @@ export default function ProtocolChart({ data, isGuest = false }: { data: { proto
                 labelLine: { show: false },
                 data: data.map((item, i) => ({
                     value: item.total_bytes,
-                    // Keep colors so the donut looks correct, but replace labels
-                    name: isGuest ? `${REDACTED}${i > 0 ? ' '.repeat(i) : ''}` : item.proto,
+                    name: isGuest ? mask(i) : item.proto,
                     itemStyle: { color: COLORS[item.proto] || '#6B7280' },
                 })),
             }
