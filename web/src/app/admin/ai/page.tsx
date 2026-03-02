@@ -9,20 +9,28 @@ type Provider = 'gemini' | 'claude' | 'openai';
 
 const PROVIDER_MODELS: Record<Provider, { value: string; label: string }[]> = {
     gemini: [
+        { value: 'gemini-2.5-pro-preview-03-25', label: 'Gemini 2.5 Pro Preview (Latest)' },
+        { value: 'gemini-2.5-flash-preview-04-17', label: 'Gemini 2.5 Flash Preview' },
         { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Recommended)' },
         { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite' },
         { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
         { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
     ],
     claude: [
-        { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (Recommended)' },
+        { value: 'claude-opus-4-5', label: 'Claude Opus 4.5 (Latest)' },
+        { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
+        { value: 'claude-sonnet-4-0', label: 'Claude Sonnet 4.0' },
+        { value: 'claude-3-7-sonnet-20250219', label: 'Claude 3.7 Sonnet' },
         { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+        { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (Recommended)' },
         { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' },
-        { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
     ],
     openai: [
-        { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Recommended)' },
+        { value: 'o3', label: 'o3 (Latest reasoning)' },
+        { value: 'o3-mini', label: 'o3 Mini' },
+        { value: 'gpt-4.5-preview', label: 'GPT-4.5 Preview' },
         { value: 'gpt-4o', label: 'GPT-4o' },
+        { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Recommended)' },
         { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
         { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
     ],

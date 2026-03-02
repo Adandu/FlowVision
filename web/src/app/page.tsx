@@ -125,12 +125,18 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Top Destinations */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
-            {data && <TopHostsChart data={data.topDestinations.slice(0, 10)} title="Top 10 Destinations" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
+            <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Top 10 Destinations</h2>
+            <div className="flex-1 w-full relative">
+              {data && <TopHostsChart data={data.topDestinations.slice(0, 10)} title="Top 10 Destinations" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
+            </div>
           </div>
 
           {/* Top Sources */}
           <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
-            {data && <TopHostsChart data={data.topSources.slice(0, 10)} title="Top 10 Sources" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
+            <h2 className="text-base font-semibold text-gray-200 mb-3 text-center">Top 10 Sources</h2>
+            <div className="flex-1 w-full relative">
+              {data && <TopHostsChart data={data.topSources.slice(0, 10)} title="Top 10 Sources" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
+            </div>
           </div>
 
           {/* Top Ports (now Services) */}

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Settings, Users, Database, Globe, Bell, ChevronRight, Shield, Server, Terminal } from 'lucide-react';
+import { Settings, Users, Database, Globe, Bell, ChevronRight, Shield, Server, Terminal, Sparkles } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import AdminSidebar from '@/components/AdminSidebar';
 
@@ -25,6 +25,8 @@ export default function AdminPage() {
         { href: '/admin/tasks', icon: <Database className="w-6 h-6 text-amber-400" />, title: 'Scheduled Tasks', desc: 'Database maintenance, cleanup and optimizations' },
         { href: '/admin/retention', icon: <Settings className="w-6 h-6 text-gray-400" />, title: 'Data Retention', desc: 'Configure how long flow data is kept in ClickHouse' },
         { href: '/admin/logs', icon: <Terminal className="w-6 h-6 text-slate-400" />, title: 'System Logs', desc: 'Live output streams for WebUI, Netflow & Database plugins' },
+        { href: '/admin/notifications', icon: <Bell className="w-6 h-6 text-orange-400" />, title: 'Notifications', desc: 'Configure alert channels and notification rules' },
+        { href: '/admin/ai', icon: <Sparkles className="w-6 h-6 text-violet-400" />, title: 'AI Integration', desc: 'Connect Gemini, Claude or ChatGPT for AI-powered traffic summaries' },
     ];
 
     if (!user) return null;
@@ -63,7 +65,7 @@ export default function AdminPage() {
                     <div className="bg-gray-900/40 border border-gray-800 rounded-xl p-5">
                         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Server className="w-4 h-4" />System</h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div><p className="text-gray-500 text-xs mb-1">Version</p><p className="text-gray-200 font-mono">1.0.0</p></div>
+                            <div><p className="text-gray-500 text-xs mb-1">Version</p><p className="text-gray-200 font-mono">1.3.0</p></div>
                             <div><p className="text-gray-500 text-xs mb-1">Auth Mode</p><p className="text-gray-200 font-mono">{process.env.AUTH_MODE || 'env-var'}</p></div>
                             <div><p className="text-gray-500 text-xs mb-1">Database</p><p className="text-gray-200 font-mono">ClickHouse</p></div>
                             <div><p className="text-gray-500 text-xs mb-1">Runtime</p><p className="text-gray-200 font-mono">Next.js 16</p></div>

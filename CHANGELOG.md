@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.1] - 2026-03-02
+
+### Fixed
+- **Top 10 Destinations / Sources missing headers**: Added `h2` card headers matching the style of all other dashboard widgets; these were lost when the ECharts built-in `title` was removed.
+- **Admin Panel main page missing AI Integration card**: Added AI Integration and Notifications cards to the sections grid so all admin areas are accessible from the main Admin page. Also updated System version to `1.3.0`.
+- **AI model lists outdated**: Updated with latest 2025/2026 models — Gemini 2.5 Pro/Flash Preview, Claude Opus 4.5, Claude Sonnet 4.5/4.0, Claude 3.7 Sonnet, OpenAI o3, o3 Mini, GPT-4.5 Preview.
+
+---
+
 ## [1.3.0] - 2026-03-02
 
 ### Added
