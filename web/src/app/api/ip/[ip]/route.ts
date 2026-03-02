@@ -149,14 +149,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             clickhouse.query({
                 query: `
                     SELECT
-                        max(timestamp) as timestamp,
+                        max(timestamp) as last_flow_time,
                         src_ip, dst_ip, src_port, dst_port,
                         multiIf(protocol = 6, 'TCP', protocol = 17, 'UDP', protocol = 1, 'ICMP', 'Other') AS protocol,
                         SUM(bytes) as bytes, SUM(packets) as packets
                     FROM flows
                     WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
                     GROUP BY src_ip, dst_ip, src_port, dst_port, protocol
-                    ORDER BY timestamp DESC LIMIT 100
+                    ORDER BY last_flow_time DESC LIMIT 100
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
@@ -168,12 +168,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             topPeersAsSrcRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
             topPeersAsDstRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
             recentFlowsRows.forEach((r: any) => {
+                r.timestamp = r.last_flow_time; // Re-assign for the UI
                 r.src_ip = obfuscateIp(r.src_ip);
                 r.dst_ip = obfuscateIp(r.dst_ip);
             });
         } else {
             await applyAliases(topPeersAsSrcRows);
             await applyAliases(topPeersAsDstRows);
+
+            // Re-assign for the UI even if logged in
+            recentFlowsRows.forEach((r: any) => { r.timestamp = r.last_flow_time; });
             await applyAliases(recentFlowsRows);
         }
 

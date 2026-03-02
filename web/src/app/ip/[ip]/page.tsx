@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import { useTimezone, formatTimestamp } from '@/lib/timezone';
 
@@ -249,6 +249,17 @@ export default function IPDetailPage() {
                             <FlowTable flows={data.recentFlows || []} />
                         </div>
                     </>
+                )}
+
+                {!loading && !data && (
+                    <div className="flex flex-col items-center justify-center p-12 text-center text-gray-500 bg-gray-900/50 border border-gray-800 rounded-xl mt-8">
+                        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                        <h2 className="text-xl font-semibold mb-2 text-gray-200">No Data Available</h2>
+                        <p>No traffic data could be found for {displayIp} in the selected time interval, or a database error occurred.</p>
+                        <Link href="/ip" className="mt-6 bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-xl transition-colors">
+                            Back to Search
+                        </Link>
+                    </div>
                 )}
             </main>
         </div>
