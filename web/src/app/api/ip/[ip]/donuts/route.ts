@@ -70,6 +70,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
         const { batchGeoIPLookup } = await import('@/lib/geoip');
         const geoDataMap = await batchGeoIPLookup(Array.from(allIps));
 
+        const { identifyService } = await import('@/lib/services');
+        const serviceMap = new Map<string, { total_bytes: number; color: string }>();
+
         incoming.forEach((r: any) => {
             const geo = geoDataMap[r.src_ip];
             if (geo) {
@@ -87,8 +90,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
                 r.lon = geo.lon;
                 r.country = geo.country;
                 r.city = geo.city;
+
+                if (!geo.private) {
+                    const svc = identifyService(geo.asn || geo.isp);
+                    if (svc) {
+                        const current = serviceMap.get(svc.name) || { total_bytes: 0, color: svc.color };
+                        current.total_bytes += Number(r.bytes);
+                        serviceMap.set(svc.name, current);
+                    }
+                }
             }
         });
+
+        const topServices = Array.from(serviceMap.entries())
+            .map(([service, data]) => ({ service, total_bytes: data.total_bytes, color: data.color }))
+            .sort((a, b) => b.total_bytes - a.total_bytes)
+            .slice(0, 5);
 
         if (!user) {
             incoming.forEach((r: any) => r.src_ip = obfuscateIp(r.src_ip));
@@ -98,7 +115,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             await applyAliases(outgoing);
         }
 
-        return NextResponse.json({ success: true, incoming, outgoing, topPorts });
+        return NextResponse.json({ success: true, incoming, outgoing, topPorts, topServices });
     } catch (error) {
         console.error('Failed to fetch IP pie chart data:', error);
         return NextResponse.json({ success: false }, { status: 500 });

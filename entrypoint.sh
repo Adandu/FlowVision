@@ -71,5 +71,14 @@ while pgrep -f clickhouse-server > /dev/null && [ $max_wait -gt 0 ]; do
     max_wait=$((max_wait-1))
 done
 
+echo "[entrypoint] Setting up log directories..."
+mkdir -p /var/log/flowvision
+touch /var/log/flowvision/clickhouse{,-err}.log \
+      /var/log/flowvision/telegraf{,-err}.log \
+      /var/log/flowvision/nextjs{,-err}.log
+
+echo "[entrypoint] Tailing logs to stdout for Docker..."
+tail -F /var/log/flowvision/*.log > /dev/stdout &
+
 echo "[entrypoint] Handing off to supervisord..."
 exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf

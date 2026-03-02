@@ -155,6 +155,28 @@ export async function GET(request: Request) {
     const { batchGeoIPLookup } = await import('@/lib/geoip');
     const geoDataMap = await batchGeoIPLookup(Array.from(allIps));
 
+    // --- Top Services Calculation ---
+    const { identifyService } = await import('@/lib/services');
+    const serviceMap = new Map<string, { total_bytes: number; color: string }>();
+
+    geoMapRaw.forEach((g: any) => {
+      const geo = geoDataMap[g.ip];
+      if (geo && !geo.private) {
+        const svc = identifyService(geo.asn || geo.isp);
+        if (svc) {
+          const current = serviceMap.get(svc.name) || { total_bytes: 0, color: svc.color };
+          current.total_bytes += Number(g.total_bytes);
+          serviceMap.set(svc.name, current);
+        }
+      }
+    });
+
+    const topServices = Array.from(serviceMap.entries())
+      .map(([service, data]) => ({ service, total_bytes: data.total_bytes, color: data.color }))
+      .sort((a, b) => b.total_bytes - a.total_bytes)
+      .slice(0, 5);
+    // ---------------------------------
+
     // Enrich payloads with GeoIP
     topDestinations.forEach((d: any) => {
       const geo = geoDataMap[d.ip];

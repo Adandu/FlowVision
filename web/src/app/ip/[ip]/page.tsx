@@ -13,6 +13,7 @@ const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'),
 const TopPortsChart = dynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
 const FlowDiagramChart = dynamic(() => import('@/components/charts/FlowDiagramChart'), { ssr: false });
 const GeoMapChart = dynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
+const TopServicesCard = dynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
 
 type IntervalType = '10m' | '1h' | '24h' | '7d' | '30d';
@@ -207,9 +208,9 @@ export default function IPDetailPage() {
                             </div>
                         )}
 
-                        {/* 4. Donut Graphs */}
+                        {/* 4. Donut Graphs & Services */}
                         {donuts && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
                                     <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                         <ArrowUpRight className="w-4 h-4 text-blue-400" /> Outgoing IPs
@@ -240,6 +241,11 @@ export default function IPDetailPage() {
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
+
+                                {/* Services Widget */}
+                                {donuts.topServices && donuts.topServices.length > 0 && (
+                                    <TopServicesCard data={donuts.topServices} />
+                                )}
                             </div>
                         )}
 

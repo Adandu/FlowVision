@@ -13,6 +13,7 @@ const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'),
 const TopPortsChart = dynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
 const ProtocolChart = dynamic(() => import('@/components/charts/ProtocolChart'), { ssr: false });
 const GeoMapChart = dynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
+const TopServicesCard = dynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
 
 type IntervalType = '10m' | '1h' | '24h' | '1w' | '1mo';
@@ -139,6 +140,13 @@ export default function Dashboard() {
             {data && <TopPortsChart data={data.topPorts} />}
           </div>
         </div>
+
+        {/* Top Services */}
+        {data?.topServices && data.topServices.length > 0 && (
+          <div className="w-full">
+            <TopServicesCard data={data.topServices} />
+          </div>
+        )}
 
         {/* Global Traffic Map */}
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
