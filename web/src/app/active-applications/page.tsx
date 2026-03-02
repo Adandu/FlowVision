@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { Activity, ChevronLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import nextDynamic from 'next/dynamic';
+import { useAuth } from '@/hooks/useAuth';
+import GuestOverlay from '@/components/GuestOverlay';
 
 const TopServicesCard = nextDynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
 
@@ -15,6 +17,7 @@ function ActiveApplicationsContent() {
     const searchParams = useSearchParams();
     const interval = searchParams.get('interval') || 'Live';
     const queryInterval = interval === 'Live' ? '5m' : interval;
+    const isLoggedIn = useAuth();
 
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -61,7 +64,8 @@ function ActiveApplicationsContent() {
                     {loading && <div className="animate-pulse w-3 h-3 rounded-full bg-orange-500 ml-4" />}
                 </div>
 
-                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[500px] flex flex-col">
+                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[500px] flex flex-col overflow-hidden">
+                    {isLoggedIn === false && <GuestOverlay />}
                     {data?.topServices && data.topServices.length > 0 ? (
                         <TopServicesCard data={data.topServices} title="All Detected Applications" />
                     ) : (

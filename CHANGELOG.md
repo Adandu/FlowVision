@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.4] - 2026-03-02
+
+### Added
+- **Shared `useAuth` hook** (`hooks/useAuth.ts`): Single source of truth for auth state across all pages.
+- **Shared `GuestOverlay` component** (`components/GuestOverlay.tsx`): Reusable frosted-glass blur overlay with Lock icon and Login CTA.
+
+### Fixed
+- **Global guest obfuscation**: All sensitive data is now consistently obfuscated for unauthenticated users across every page:
+  - **Dashboard**: All 5 widgets (Destinations, Sources, Services, Protocol, Applications)
+  - **Flow Log**: Entire flow table
+  - **Active IPs**: Both destination and source IP charts
+  - **Active Services**: Service/ports chart
+  - **Active Applications**: Applications chart
+  - **IP Detail page**: All 4 donut charts (Outgoing, Incoming, Services, Applications) + Flow Log table
+
+---
+
 ## [1.3.3] - 2026-03-02
 
 ### Fixed

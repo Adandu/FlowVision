@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { List } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/hooks/useAuth';
+import GuestOverlay from '@/components/GuestOverlay';
 
 const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
 
@@ -11,6 +13,7 @@ export default function FlowLogPage() {
     const [flows, setFlows] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [limit, setLimit] = useState('50');
+    const isLoggedIn = useAuth();
 
     useEffect(() => {
         setLoading(true);
@@ -46,10 +49,10 @@ export default function FlowLogPage() {
                     </div>
                 </div>
 
-                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
+                <div className="relative bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl overflow-hidden">
+                    {isLoggedIn === false && <GuestOverlay />}
                     {loading && <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading flows…</p>}
-                    {!loading && flows.length === 0 && <p className="text-gray-500 text-sm text-center py-8">No flows recorded yet</p>}
-                    {!loading && flows.length > 0 && <FlowTable flows={flows} />}
+                    {!loading && <FlowTable flows={flows} />}
                 </div>
             </main>
         </div>
