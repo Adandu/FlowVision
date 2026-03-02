@@ -2,23 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
 ## [1.0.0] - 2026-03-02
 
 ### Added
-- **Global GeoMap Tracking**: Implemented ECharts integration to visualize inbound/outbound traffic directly on a 3D Earth projection.
-- **Application 'Services' Detection Layer**: Intelligent ASN/ISP mapping allowing raw Netflow outputs to be classified into specific software platforms (e.g., Netflix, Google Cloud, Meta/WhatsApp).
-- **Custom Administrator Aliases**: IP addresses can now be aliased directly to human-readable server names that persist globally across all views (e.g., `192.168.1.1` -> `MyRouter`).
-- **Dashboard StatCards**: Introduced new aggregated Active IPs, Active Services, and Active Applications metric headers.
-- **Top 10 Metrics Control**: Real-time traffic is now properly sliced to show accurate and performant Top 10 widgets across Destinations, Sources, ports, and applications.
-- **Admin Logs Streaming Viewer**: Dedicated NetFlows internal log tab using explicit terminal pipelines to monitor live router handshakes.
-- **Pagination Dropdowns**: Variable dataset loading mechanisms added within FlowLogs page, supporting between 50 and 1,000 deep traces.
+- **Global GeoMap Tracking**: ECharts 3D Earth projection visualizing inbound/outbound traffic by geography.
+- **AI Traffic Summaries**: Configurable AI integration (Google Gemini, Anthropic Claude, OpenAI ChatGPT) generates a concise 2-3 sentence network insight widget shown at the top of the Dashboard and each IP detail page. Toggle, provider selection, and API keys managed via Admin → AI Integration.
+- **Application Services Detection**: Intelligent ASN/ISP mapping classifying raw Netflow data into known platforms (Netflix, Google Cloud, Meta/WhatsApp, Cloudflare, etc.) with an "Other" bucket for unclassified traffic.
+- **Custom IP Aliases**: Human-readable server names for IP addresses, persisted globally. Alias labels shown in charts while real IPs are preserved for correct navigation.
+- **Dashboard 5-Widget Grid**: Top 10 Destinations, Top 10 Sources, Top 10 Services, Protocol Breakdown, and Top 10 Applications — always visible in a single consistent grid row.
+- **Active Applications StatCard**: New header metric counting unique detected application providers.
+- **Admin Logs Streaming Viewer**: Dedicated NetFlows tab reading raw Telegraf output, WebUI tab for NextJS logs, using native `tail -n` for reliable line-based reading.
+- **Flow Log Pagination**: Dropdown selector (50 / 100 / 250 / 500 / 1000 flows) on the Flow Log page.
+- **Admin AI Integration Page**: Toggle AI on/off, select active provider, input API keys, and test connections — all persisted via ClickHouse settings table.
 
 ### Changed
-- Render metrics (Ports & ASN) converted into beautifully aligned space-saving vertical Donut Pie charts.
-- Overhauled the core MySQL aggregation queries by redefining the bounds between internal traffic vs. absolute ingress traffic.
-- Navigation Logo UI dynamically routed to trigger SPA state resets.
+- Port-based "Top Services" and ASN-based "Top Applications" widgets converted to vertical-legend Donut Pie charts.
+- Dashboard widget grid reordered: Destinations → Sources → Services → Protocol → Applications.
+- IP detail page widgets show all historical records (not capped at 10) for the selected interval.
+- FlowVision logo in Navbar is now a clickable link back to the Dashboard.
+- IP Aliases form uses generic placeholders (`192.168.1.1` / `MyServer`) with IPv4/IPv6 format validation.
 
 ### Fixed
-- Stabilized `supervisord` internal buffer errors reading short streams by porting to native file `tail -n`.
-- Solved Dashboard `0B Inbound Traffic` anomaly resulting from inverse masking boundaries.
-- Addressed IP Page visualization errors which sporadically dropped data by implementing Fallback arrays for unknown Application traffic.
+- **Inbound Traffic 0B**: Corrected the SQL direction query — `inbound_bytes` now correctly sums flows where `src_ip` is public AND `dst_ip` is private.
+- **Alias Click Navigation**: Clicking an aliased IP in a chart now routes to the correct real IP page instead of a broken alias-name URL.
+- **Admin Logs truncated to 6 lines**: Replaced `supervisorctl tail` (byte-based) with `tail -n 1000` (line-based) against physical supervisor log files.
+- **Top 10 Applications widget missing**: Removed the conditional `length > 0` guard so the widget is always present in the layout.
