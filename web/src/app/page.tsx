@@ -116,8 +116,9 @@ export default function Dashboard() {
           <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
             <span className="shrink-0 mt-0.5">⚠️</span>
             <span>
-              <strong>Inbound traffic is 0 bps</strong> — OPNsense appears to be exporting NetFlow from a LAN/VLAN interface only (all observed flows are private→private or private→public).
-              To see inbound internet traffic, configure NetFlow export on the <strong>WAN interface</strong> in OPNsense under <strong>Services → Netflow</strong>.
+              <strong>Inbound traffic is 0 bps</strong> — all observed flows contain only private IP addresses, so no internet-bound traffic is being classified.
+              If OPNsense is running in <strong>transparent bridge mode</strong>, add the <strong>WAN-side bridge member port</strong> (the physical port facing your upstream router) to the NetFlow export interfaces under <strong>Services → Netflow → Interfaces</strong>.
+              This ensures flows crossing the WAN boundary are captured with real public source IPs.
             </span>
           </div>
         )}
