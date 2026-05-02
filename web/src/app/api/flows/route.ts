@@ -8,15 +8,16 @@ export async function GET(request: Request) {
   const interval = searchParams.get('interval') || '1h';
 
   let timeFilter = '';
+  let intervalSeconds = 3600;
   switch (interval) {
-    case '1m': timeFilter = 'timestamp >= now() - INTERVAL 1 MINUTE'; break;
-    case '5m': timeFilter = 'timestamp >= now() - INTERVAL 5 MINUTE'; break;
-    case '10m': timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE'; break;
-    case '1h': timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; break;
-    case '24h': timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR'; break;
-    case '1w': timeFilter = 'timestamp >= now() - INTERVAL 1 WEEK'; break;
-    case '1mo': timeFilter = 'timestamp >= now() - INTERVAL 1 MONTH'; break;
-    default: timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR';
+    case '1m': timeFilter = 'timestamp >= now() - INTERVAL 1 MINUTE'; intervalSeconds = 60; break;
+    case '5m': timeFilter = 'timestamp >= now() - INTERVAL 5 MINUTE'; intervalSeconds = 300; break;
+    case '10m': timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE'; intervalSeconds = 600; break;
+    case '1h': timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; intervalSeconds = 3600; break;
+    case '24h': timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR'; intervalSeconds = 86400; break;
+    case '1w': timeFilter = 'timestamp >= now() - INTERVAL 1 WEEK'; intervalSeconds = 604800; break;
+    case '1mo': timeFilter = 'timestamp >= now() - INTERVAL 1 MONTH'; intervalSeconds = 2592000; break;
+    default: timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; intervalSeconds = 3600;
   }
 
   const privateSrc = `(
@@ -30,7 +31,10 @@ export async function GET(request: Request) {
     let timeSeriesQuery = '';
     if (interval === '1w' || interval === '1mo' || interval === '24h') {
       timeSeriesQuery = `
-              SELECT hour AS time, toUInt64(sumMerge(bytes_sum)) AS total_bytes
+              SELECT
+                hour AS time,
+                toUInt64(sumMerge(bytes_sum)) AS total_bytes,
+                round(total_bytes * 8 / 3600, 2) AS bits_per_second
               FROM flows_1h_mv
               WHERE hour >= now() - INTERVAL ${interval === '24h' ? '24 HOUR' : interval === '1w' ? '1 WEEK' : '1 MONTH'}
               GROUP BY time ORDER BY time ASC
@@ -40,7 +44,10 @@ export async function GET(request: Request) {
                 STEP 3600`;
     } else if (interval === '10m' || interval === '1h') {
       timeSeriesQuery = `
-              SELECT minute AS time, toUInt64(sumMerge(bytes_sum)) AS total_bytes
+              SELECT
+                minute AS time,
+                toUInt64(sumMerge(bytes_sum)) AS total_bytes,
+                round(total_bytes * 8 / 60, 2) AS bits_per_second
               FROM flows_1m_mv
               WHERE minute >= now() - INTERVAL ${interval === '10m' ? '10 MINUTE' : '1 HOUR'}
               GROUP BY time ORDER BY time ASC
@@ -50,7 +57,10 @@ export async function GET(request: Request) {
                 STEP 60`;
     } else if (interval === '5m') { // Used by Active Pages if Live
       timeSeriesQuery = `
-              SELECT toStartOfInterval(timestamp, INTERVAL 5 SECOND) AS time, toUInt64(SUM(bytes)) AS total_bytes
+              SELECT
+                toStartOfInterval(timestamp, INTERVAL 5 SECOND) AS time,
+                toUInt64(SUM(bytes)) AS total_bytes,
+                round(total_bytes * 8 / 5, 2) AS bits_per_second
               FROM flows
               WHERE timestamp >= now() - INTERVAL 5 MINUTE
               GROUP BY time ORDER BY time ASC
@@ -60,7 +70,10 @@ export async function GET(request: Request) {
                 STEP 5`;
     } else { // 3m Live Mode Dashboard
       timeSeriesQuery = `
-              SELECT toStartOfInterval(timestamp, INTERVAL 3 SECOND) AS time, toUInt64(SUM(bytes)) AS total_bytes
+              SELECT
+                toStartOfInterval(timestamp, INTERVAL 3 SECOND) AS time,
+                toUInt64(SUM(bytes)) AS total_bytes,
+                round(total_bytes * 8 / 3, 2) AS bits_per_second
               FROM flows
               WHERE timestamp >= now() - INTERVAL 1 MINUTE
               GROUP BY time ORDER BY time ASC
@@ -101,7 +114,12 @@ export async function GET(request: Request) {
           SELECT
             sumIf(bytes, ${privateSrc} AND NOT ${privateDst}) AS outbound_bytes,
             sumIf(bytes, NOT ${privateSrc} AND ${privateDst}) AS inbound_bytes,
-            sumIf(bytes, ${privateSrc} AND ${privateDst}) AS internal_bytes
+            sumIf(bytes, ${privateSrc} AND ${privateDst}) AS internal_bytes,
+            sum(bytes) AS total_bytes,
+            round(outbound_bytes * 8 / ${intervalSeconds}, 2) AS outbound_bps,
+            round(inbound_bytes * 8 / ${intervalSeconds}, 2) AS inbound_bps,
+            round(internal_bytes * 8 / ${intervalSeconds}, 2) AS internal_bps,
+            round(total_bytes * 8 / ${intervalSeconds}, 2) AS total_bps
           FROM flows WHERE ${timeFilter}`;
 
     const geoMapDataQuery = `

@@ -4,19 +4,19 @@ import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts/core';
 
 interface Props {
-    data: { time: string; total_bytes: number }[];
+    data: { time: string; total_bytes: number; bits_per_second?: number }[];
     timezone?: string;
     tzOffsetMinutes?: number;
     interval?: string;
 }
 
-function formatBytes(bytes: number) {
-    if (!bytes || bytes <= 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.max(0, Math.floor(Math.log(bytes) / Math.log(k)));
+function formatBits(bitsPerSecond: number) {
+    if (!bitsPerSecond || bitsPerSecond <= 0) return '0 bps';
+    const k = 1000;
+    const sizes = ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
+    const i = Math.max(0, Math.floor(Math.log(bitsPerSecond) / Math.log(k)));
     const validIndex = Math.min(i, sizes.length - 1);
-    return parseFloat((bytes / Math.pow(k, validIndex)).toFixed(2)) + ' ' + sizes[validIndex];
+    return parseFloat((bitsPerSecond / Math.pow(k, validIndex)).toFixed(2)) + ' ' + sizes[validIndex];
 }
 
 export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes = 0, interval }: Props) {
@@ -25,7 +25,7 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
         // Ensure string is parsed as UTC by appending 'Z'
         const timeStr = item.time.includes('Z') ? item.time : item.time + 'Z';
         const utcMs = new Date(timeStr).getTime();
-        return [utcMs, item.total_bytes];
+        return [utcMs, item.bits_per_second ?? 0];
     });
 
     let min: number | undefined;
@@ -57,7 +57,7 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
                     day: '2-digit', month: '2-digit',
                     hour12: false,
                 }).format(localDate);
-                return `${timeStr}<br/>Bandwidth: <b>${formatBytes(val)}</b>`;
+                return `${timeStr}<br/>Bandwidth: <b>${formatBits(val)}</b>`;
             }
         },
         grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
@@ -90,9 +90,9 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
             axisLabel: {
                 color: '#9CA3AF',
                 formatter: (value: number) => {
-                    if (value <= 0) return '0 B';
-                    const k = 1024;
-                    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                    if (value <= 0) return '0 bps';
+                    const k = 1000;
+                    const sizes = ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
                     const i = Math.max(0, Math.floor(Math.log(value) / Math.log(k)));
                     const validIndex = Math.min(i, sizes.length - 1);
                     return parseFloat((value / Math.pow(k, validIndex)).toFixed(1)) + ' ' + sizes[validIndex];
