@@ -53,7 +53,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
             GROUP BY dst_port, protocol
             ORDER BY bytes DESC
-            LIMIT 5
+            LIMIT 10
         `;
         const topPorts = await clickhouse.query({
             query: portsQuery,
@@ -109,6 +109,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             if (geo) { r.lat = geo.lat; r.lon = geo.lon; r.country = geo.country; r.city = geo.city; }
             addToServiceMap(r.dst_ip, r.bytes);
         });
+
+        // If no public peers were identified via ASN, fall back to L7 port-based app names
+        if (serviceMap.size === 0) {
+            const { getAppName } = await import('@/lib/protocols');
+            for (const p of topPorts as any[]) {
+                const portNum = Number(p.dst_port);
+                const proto = p.protocol === 6 ? 'TCP' : p.protocol === 17 ? 'UDP' : p.protocol === 1 ? 'ICMP' : 'Other';
+                const appName = getAppName(portNum);
+                const label = appName.startsWith('Port ') ? `${proto} ${portNum}` : appName;
+                const current = serviceMap.get(label) || { total_bytes: 0, color: asnColor(label) };
+                current.total_bytes += Number(p.bytes);
+                serviceMap.set(label, current);
+            }
+        }
 
         const topServices = Array.from(serviceMap.entries())
             .map(([service, data]) => ({ service, total_bytes: data.total_bytes, color: data.color }))
