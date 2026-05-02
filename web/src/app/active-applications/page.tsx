@@ -40,7 +40,7 @@ function ActiveApplicationsContent() {
 
         fetchData();
         if (interval === 'Live') {
-            timer = window.setInterval(fetchData, 5000);
+            timer = window.setInterval(fetchData, 300);
         } else {
             timer = window.setInterval(fetchData, 60000);
         }

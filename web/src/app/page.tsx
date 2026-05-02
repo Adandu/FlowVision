@@ -70,7 +70,7 @@ export default function Dashboard() {
 
     // Setup polling
     if (interval === 'Live') {
-      timer = window.setInterval(fetchData, 1000); // 1 second for Live
+      timer = window.setInterval(fetchData, 300); // 300ms for Live
     } else {
       timer = window.setInterval(fetchData, 60000); // 60 seconds otherwise
     }
