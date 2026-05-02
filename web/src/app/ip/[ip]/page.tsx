@@ -269,7 +269,7 @@ export default function IPDetailPage() {
                         {/* 5. Recent Flows Table — no overlay so IPs remain clickable */}
                         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 shadow-xl">
                             <h3 className="text-base font-semibold text-gray-200 mb-4 px-2">Flow Log Table</h3>
-                            <FlowTable flows={data.recentFlows || []} isGuest={isLoggedIn === false} highlightIp={ip} />
+                            <FlowTable flows={data.recentFlows || []} isGuest={isLoggedIn === false} showNetworkDirection />
                         </div>
                     </>
                 )}
