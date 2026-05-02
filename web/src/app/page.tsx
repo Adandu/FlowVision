@@ -192,7 +192,7 @@ export default function Dashboard() {
             </h2>
             <Link href="/flow-log" className="text-sm text-blue-400 hover:text-blue-300 hover:underline">View all →</Link>
           </div>
-          {flows.length > 0 && <FlowTable flows={flows} isGuest={isLoggedIn === false} />}
+          {flows.length > 0 && <FlowTable flows={flows} isGuest={isLoggedIn === false} showNetworkDirection />}
           {flows.length === 0 && !loading && <p className="text-gray-500 text-sm text-center py-8">No flows recorded yet</p>}
         </div>
       </main>

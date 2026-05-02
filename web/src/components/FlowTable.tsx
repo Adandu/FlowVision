@@ -39,7 +39,20 @@ const PROTOCOL_COLORS: Record<string, string> = {
 
 type SortKey = keyof Flow;
 
-export default function FlowTable({ flows, isGuest = false, highlightIp }: { flows: Flow[]; isGuest?: boolean; highlightIp?: string }) {
+function isPrivate(ip: string): boolean {
+    return /^10\./.test(ip) || /^192\.168\./.test(ip) || /^172\.(1[6-9]|2[0-9]|3[01])\./.test(ip);
+}
+
+function networkDirection(src: string, dst: string): 'out' | 'in' | 'int' | 'ext' {
+    const srcPriv = isPrivate(src);
+    const dstPriv = isPrivate(dst);
+    if (srcPriv && !dstPriv) return 'out';
+    if (!srcPriv && dstPriv) return 'in';
+    if (srcPriv && dstPriv) return 'int';
+    return 'ext';
+}
+
+export default function FlowTable({ flows, isGuest = false, highlightIp, showNetworkDirection }: { flows: Flow[]; isGuest?: boolean; highlightIp?: string; showNetworkDirection?: boolean }) {
     const { timezone } = useTimezone();
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(0);
@@ -97,7 +110,7 @@ export default function FlowTable({ flows, isGuest = false, highlightIp }: { flo
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="border-b border-gray-800 bg-gray-900/60">
-                            {highlightIp && (
+                            {(highlightIp || showNetworkDirection) && (
                                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider select-none">Dir</th>
                             )}
                             {([
@@ -118,12 +131,17 @@ export default function FlowTable({ flows, isGuest = false, highlightIp }: { flo
                     <tbody className="divide-y divide-gray-800/50">
                         {page_data.map((flow, i) => {
                             const isOutgoing = highlightIp ? flow.src_ip === highlightIp : null;
+                            const netDir = showNetworkDirection ? networkDirection(flow.src_ip, flow.dst_ip) : null;
                             return (
                             <tr key={i} className="hover:bg-gray-800/30 transition-colors">
-                                {highlightIp && (
+                                {(highlightIp || showNetworkDirection) && (
                                     <td className="px-3 py-2.5">
                                         {isOutgoing === true && <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">→ Out</span>}
                                         {isOutgoing === false && <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">← In</span>}
+                                        {netDir === 'out' && <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded">→ Out</span>}
+                                        {netDir === 'in'  && <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">← In</span>}
+                                        {netDir === 'int' && <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">↔ Int</span>}
+                                        {netDir === 'ext' && <span className="text-xs font-semibold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">⇄ Ext</span>}
                                     </td>
                                 )}
                                 <td className="px-4 py-2.5 text-gray-400 text-xs font-mono whitespace-nowrap">
@@ -153,7 +171,7 @@ export default function FlowTable({ flows, isGuest = false, highlightIp }: { flo
                         );
                         })}
                         {page_data.length === 0 && (
-                            <tr><td colSpan={highlightIp ? 8 : 7} className="px-4 py-8 text-center text-gray-500">No flows matching your search</td></tr>
+                            <tr><td colSpan={(highlightIp || showNetworkDirection) ? 8 : 7} className="px-4 py-8 text-center text-gray-500">No flows matching your search</td></tr>
                         )}
                     </tbody>
                 </table>
