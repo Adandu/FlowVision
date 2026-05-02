@@ -43,7 +43,6 @@ export default function FlowLogPage() {
                             <option value="100">100 Flows</option>
                             <option value="250">250 Flows</option>
                             <option value="500">500 Flows</option>
-                            <option value="1000">1000 Flows</option>
                         </select>
                     </div>
                 </div>

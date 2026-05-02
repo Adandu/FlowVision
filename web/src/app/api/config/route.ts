@@ -10,7 +10,7 @@ export async function GET() {
 
         const enabled = rows.length > 0 ? rows[0].value === '1' : false;
 
-        return NextResponse.json({ success: true, guest_mode_enabled: enabled }, {
+        return NextResponse.json({ success: true, guest_mode_enabled: enabled, auth_mode: process.env.AUTH_MODE || 'local' }, {
             headers: {
                 'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=10'
             }

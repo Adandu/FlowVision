@@ -112,10 +112,12 @@ export async function batchGeoIPLookup(ips: string[]): Promise<Record<string, Ge
     const uniqueIps = Array.from(new Set(ips.filter(ip => !!ip)));
     const results: Record<string, GeoIPData> = {};
 
-    // We fetch one by one to respect rate limits gently and make use of the shared lookup logic
-    // which checks cache and private IP fast-paths first
-    for (const ip of uniqueIps) {
-        results[ip] = await lookupIp(ip);
+    // Process in batches of 10 to stay within rate limits while avoiding sequential blocking
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < uniqueIps.length; i += BATCH_SIZE) {
+        const chunk = uniqueIps.slice(i, i + BATCH_SIZE);
+        const chunkResults = await Promise.all(chunk.map(ip => lookupIp(ip)));
+        chunk.forEach((ip, j) => { results[ip] = chunkResults[j]; });
     }
 
     return results;

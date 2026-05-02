@@ -40,7 +40,7 @@ function ActiveIpsContent() {
 
         fetchData();
         if (interval === 'Live') {
-            timer = window.setInterval(fetchData, 1000);
+            timer = window.setInterval(fetchData, 3000);
         } else {
             timer = window.setInterval(fetchData, 60000);
         }

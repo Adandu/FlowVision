@@ -178,7 +178,7 @@ export default function IPDetailPage() {
                                     <ArrowUpRight className="w-4 h-4 text-blue-400" /> Outgoing Traffic Bandwidth
                                 </h3>
                                 {data.timelineAsSrc?.length > 0
-                                    ? <BandwidthChart data={data.timelineAsSrc.map((d: any) => ({ time: d.time, total_bytes: d.bytes }))} timezone={timezone} interval={interval} />
+                                    ? <BandwidthChart data={data.timelineAsSrc.map((d: any) => ({ time: d.time, total_bytes: d.bytes, bits_per_second: d.bits_per_second ?? 0 }))} timezone={timezone} interval={interval} />
                                     : <p className="text-gray-500 text-sm text-center py-8">No outgoing traffic in interval</p>}
                             </div>
                             <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
@@ -186,7 +186,7 @@ export default function IPDetailPage() {
                                     <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> Incoming Traffic Bandwidth
                                 </h3>
                                 {data.timelineAsDst?.length > 0
-                                    ? <BandwidthChart data={data.timelineAsDst.map((d: any) => ({ time: d.time, total_bytes: d.bytes }))} timezone={timezone} interval={interval} />
+                                    ? <BandwidthChart data={data.timelineAsDst.map((d: any) => ({ time: d.time, total_bytes: d.bytes, bits_per_second: d.bits_per_second ?? 0 }))} timezone={timezone} interval={interval} />
                                     : <p className="text-gray-500 text-sm text-center py-8">No incoming traffic in interval</p>}
                             </div>
                         </div>

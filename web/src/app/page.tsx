@@ -111,6 +111,17 @@ export default function Dashboard() {
           <StatCard title="Active Applications" value={!data && loading ? '...' : (data?.topServices?.length || 0).toString()} icon={<Activity />} color="orange" href={`/active-applications?interval=${interval}`} span={1} />
         </div>
 
+        {/* Inbound=0 diagnostic hint — shown when traffic exists but no inbound detected */}
+        {data && Number(dir.total_bps) > 0 && Number(dir.inbound_bps) === 0 && (
+          <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
+            <span className="shrink-0 mt-0.5">⚠️</span>
+            <span>
+              <strong>Inbound traffic is 0 bps</strong> — OPNsense appears to be exporting NetFlow from a LAN/VLAN interface only (all observed flows are private→private or private→public).
+              To see inbound internet traffic, configure NetFlow export on the <strong>WAN interface</strong> in OPNsense under <strong>Services → Netflow</strong>.
+            </span>
+          </div>
+        )}
+
         {/* Bandwidth Chart */}
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
           <div className="flex items-center justify-between mb-4">

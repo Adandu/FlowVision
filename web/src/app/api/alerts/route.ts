@@ -93,7 +93,7 @@ export async function GET() {
     try {
         await evaluateAlerts().catch(error => console.error('Alert evaluation failed:', error));
         const [rules, events] = await Promise.all([
-            clickhouse.query({ query: 'SELECT * FROM alerts ORDER BY created_at DESC', format: 'JSONEachRow' }).then(r => r.json()),
+            clickhouse.query({ query: 'SELECT * FROM alerts ORDER BY created_at DESC LIMIT 200', format: 'JSONEachRow' }).then(r => r.json()),
             clickhouse.query({ query: 'SELECT ae.*, a.name as alert_name FROM alert_events ae JOIN alerts a ON ae.alert_id = a.id ORDER BY ae.triggered_at DESC LIMIT 50', format: 'JSONEachRow' }).then(r => r.json()),
         ]);
         return NextResponse.json({ success: true, data: { rules, events } });
@@ -137,7 +137,7 @@ export async function DELETE(request: Request) {
         if (!id) return NextResponse.json({ success: false, error: 'Missing id' }, { status: 400 });
 
         await clickhouse.command({
-            query: `ALTER TABLE alerts DELETE WHERE id = {id:String}`,
+            query: `ALTER TABLE alerts DELETE WHERE id = {id:UUID}`,
             query_params: { id },
         });
 
