@@ -131,6 +131,19 @@ export async function GET(request: Request) {
               SELECT src_ip AS ip, SUM(bytes) as total_bytes FROM flows WHERE ${timeFilter} GROUP BY ip
           ) GROUP BY ip ORDER BY total_bytes DESC LIMIT 100`;
 
+    // Separate query for Applications widget: top 100 public IPs only so internal
+    // hosts (which dominate total traffic over long intervals) don't crowd out
+    // internet destinations that carry application-identifying ASN data.
+    const privatePattern = `'^10\\\\.|^192\\\\.168\\\\.|^172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.'`;
+    const topPublicIpsQuery = `
+          SELECT ip, sum(total_bytes) as total_bytes FROM (
+              SELECT dst_ip AS ip, SUM(bytes) as total_bytes FROM flows
+              WHERE ${timeFilter} AND NOT match(dst_ip, ${privatePattern}) GROUP BY ip
+              UNION ALL
+              SELECT src_ip AS ip, SUM(bytes) as total_bytes FROM flows
+              WHERE ${timeFilter} AND NOT match(src_ip, ${privatePattern}) GROUP BY ip
+          ) GROUP BY ip ORDER BY total_bytes DESC LIMIT 100`;
+
     const activeCountsQuery = `
           SELECT
             uniqExact(ip) AS active_ips_distinct,
@@ -141,7 +154,7 @@ export async function GET(request: Request) {
             SELECT dst_ip AS ip FROM flows WHERE ${timeFilter}
           )`;
 
-    const [timeSeries, topDestinations, topSources, topPortsRaw, protocolBreakdown, trafficDirection, geoMapRaw, activeCounts] = await Promise.all([
+    const [timeSeries, topDestinations, topSources, topPortsRaw, protocolBreakdown, trafficDirection, geoMapRaw, activeCounts, topPublicIpsRaw] = await Promise.all([
       clickhouse.query({ query: timeSeriesQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: topDestinationsQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: topSourcesQuery, format: 'JSONEachRow' }).then(res => res.json()),
@@ -150,6 +163,7 @@ export async function GET(request: Request) {
       clickhouse.query({ query: trafficDirectionQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: geoMapDataQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: activeCountsQuery, format: 'JSONEachRow' }).then(res => res.json()),
+      clickhouse.query({ query: topPublicIpsQuery, format: 'JSONEachRow' }).then(res => res.json()),
     ]);
 
     const { getAppName } = await import('@/lib/protocols');
@@ -182,6 +196,7 @@ export async function GET(request: Request) {
     topDestinations.forEach((d: any) => allIps.add(d.ip));
     topSources.forEach((s: any) => allIps.add(s.ip));
     geoMapRaw.forEach((g: any) => allIps.add(g.ip));
+    topPublicIpsRaw.forEach((g: any) => allIps.add(g.ip));
 
     // Batch GeoIP Lookup (on the backend, before obfuscation)
     const { batchGeoIPLookup } = await import('@/lib/geoip');
@@ -198,7 +213,7 @@ export async function GET(request: Request) {
       return `hsl(${((h >>> 0) % 360)}, 45%, 52%)`;
     }
 
-    geoMapRaw.forEach((g: any) => {
+    topPublicIpsRaw.forEach((g: any) => {
       const geo = geoDataMap[g.ip];
       let assigned = false;
       if (geo && !geo.private && (geo.asn || geo.isp)) {
@@ -211,7 +226,6 @@ export async function GET(request: Request) {
         }
       }
 
-      // Unknown public IP — label by ASN/ISP name instead of generic 'Other'
       if (!assigned && geo && !geo.private) {
         const label = geo.asn || geo.isp || 'Other';
         const color = label === 'Other' ? '#4B5563' : asnColor(label);
