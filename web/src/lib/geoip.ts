@@ -17,6 +17,10 @@ export interface GeoIPData {
 }
 
 export async function lookupIp(ip: string): Promise<GeoIPData> {
+    if (!/^[0-9a-fA-F:.]+$/.test(ip)) {
+        return { private: true, country: 'Invalid IP', countryCode: 'UN', isp: 'Invalid', asn: '', lat: 0, lon: 0, city: '', flag: '🌐' };
+    }
+
     // Fast-path for private/internal IPs
     const isPrivateIP = /^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|127\.|169\.254\.|::1|fc00:|fe80:)/.test(ip);
     if (isPrivateIP) {

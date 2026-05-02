@@ -172,7 +172,7 @@ export default function AdminAIPage() {
                             <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
                                 <div className="p-6 border-b border-gray-800">
                                     <h3 className="text-base font-semibold text-gray-200">API Keys &amp; Model Selection</h3>
-                                    <p className="text-gray-500 text-sm mt-1">Keys are stored securely in ClickHouse and never exposed to the frontend.</p>
+                                    <p className="text-gray-500 text-sm mt-1">Keys are stored in ClickHouse and are only returned to authenticated admins.</p>
                                 </div>
                                 <div className="divide-y divide-gray-800">
                                     {providers.map(p => {

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout', '/_next', '/favicon.ico', '/api/config'];
 const GUEST_PATHS = ['/', '/active-ips', '/active-services', '/flow-log'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Always allow public paths

@@ -35,7 +35,7 @@ export ADMIN_PASSWORD="ChangeMeInProduction123!"
 docker compose up -d
 ```
 
-4. Configure your router/firewall (e.g. OPNsense, pfSense, Unifi) to send **Netflow v9** or **IPFIX** data to the host IP of FlowVision on **Port 2055 (UDP)**.
+4. Configure your router/firewall (e.g. OPNsense, pfSense, Unifi) to send **NetFlow v5** data to the host IP of FlowVision on **Port 2055 (UDP)**.
 
 5. Navigate to `http://<your-ip>:3000` in your web browser and log in with username `admin` and the password you set above.
 
@@ -48,10 +48,10 @@ For advanced deployment instructions, API endpoints, and configuration examples 
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, Tailwind CSS, Lucide Icons, ECharts
+- **Frontend**: Next.js 16, Tailwind CSS, Lucide Icons, ECharts
 - **Backend**: Next.js App Router (Node.js API)
 - **Database**: ClickHouse (Optimized vector-based OLAP for time-series)
-- **Collector**: Telegraf (Ingests Netflow v9 / IPFIX over UDP)
+- **Collector**: Telegraf (ingests NetFlow v5 over UDP)
 
 ## License and Disclaimer
 

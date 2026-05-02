@@ -43,7 +43,20 @@ CREATE TABLE IF NOT EXISTS notification_log (id UUID DEFAULT generateUUIDv4(), c
 
 # ─── Seed default settings ────────────────────────────────────────────────────
 clickhouse-client --host localhost --query "
-INSERT INTO settings (key, value) VALUES ('retention_days','180'),('auth_mode','local'),('oidc_enabled','0'),('oidc_provider_url',''),('oidc_client_id',''),('oidc_client_secret',''),('oidc_scopes','openid profile email');
+INSERT INTO settings (key, value)
+SELECT key, value FROM
+(
+    SELECT 'retention_days' AS key, '180' AS value UNION ALL
+    SELECT 'auth_mode', 'local' UNION ALL
+    SELECT 'guest_mode_enabled', '0' UNION ALL
+    SELECT 'oidc_enabled', '0' UNION ALL
+    SELECT 'oidc_provider_url', '' UNION ALL
+    SELECT 'oidc_client_id', '' UNION ALL
+    SELECT 'oidc_client_secret', '' UNION ALL
+    SELECT 'oidc_scopes', 'openid profile email' UNION ALL
+    SELECT 'alerts_enabled', '0'
+)
+WHERE key NOT IN (SELECT key FROM settings FINAL);
 " 2>/dev/null || true
 
 # ─── Create default admin user (if no users exist yet) ───────────────────────

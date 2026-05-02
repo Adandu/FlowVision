@@ -1,12 +1,43 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
-import { verifyPassword, createToken, hashPassword, COOKIE_NAME } from '@/lib/auth';
+import { verifyPassword, createToken, COOKIE_NAME } from '@/lib/auth';
+
+const attempts = new Map<string, { count: number; resetAt: number }>();
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_ATTEMPTS = 8;
+
+function getClientKey(request: Request, username: string) {
+    const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+    const realIp = request.headers.get('x-real-ip') || forwarded || 'unknown';
+    return `${realIp}:${username.toLowerCase()}`;
+}
+
+function isLimited(key: string) {
+    const now = Date.now();
+    const entry = attempts.get(key);
+    if (!entry || entry.resetAt <= now) {
+        attempts.set(key, { count: 0, resetAt: now + WINDOW_MS });
+        return false;
+    }
+    return entry.count >= MAX_ATTEMPTS;
+}
+
+function recordFailure(key: string) {
+    const now = Date.now();
+    const entry = attempts.get(key) || { count: 0, resetAt: now + WINDOW_MS };
+    attempts.set(key, { count: entry.count + 1, resetAt: entry.resetAt > now ? entry.resetAt : now + WINDOW_MS });
+}
 
 export async function POST(request: Request) {
     try {
         const { username, password } = await request.json();
         if (!username || !password) {
             return NextResponse.json({ success: false, error: 'Username and password required' }, { status: 400 });
+        }
+
+        const attemptKey = getClientKey(request, username);
+        if (isLimited(attemptKey)) {
+            return NextResponse.json({ success: false, error: 'Too many login attempts. Try again later.' }, { status: 429 });
         }
 
         const rows = await clickhouse.query({
@@ -18,13 +49,16 @@ export async function POST(request: Request) {
 
         const user = rows[0];
         if (!user || !user.is_active) {
+            recordFailure(attemptKey);
             return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
         }
 
         const valid = await verifyPassword(password, user.password_hash);
         if (!valid) {
+            recordFailure(attemptKey);
             return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
         }
+        attempts.delete(attemptKey);
 
         // Update last_login
         await clickhouse.command({

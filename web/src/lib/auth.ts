@@ -79,7 +79,7 @@ export async function getCurrentUser(): Promise<User | null> {
                 if (rows.length > 0) return rows[0];
                 return {
                     id: 'proxy-user', username: remoteUser, email: '', display_name: remoteUser,
-                    role: 'admin', timezone: 'UTC', language: 'en', is_active: 1
+                    role: 'viewer', timezone: 'UTC', language: 'en', is_active: 1
                 };
             }
         }

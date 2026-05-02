@@ -70,6 +70,12 @@ async function sendTelegram(botToken: string, chatId: string, n: Notification) {
 
 // ─── Email (SMTP) ─────────────────────────────────────────────────────────────
 async function sendEmail(c: Record<string, string>, n: Notification) {
+    const escapeHtml = (value: string) => value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     const transporter = nodemailer.createTransport({
         host: c.smtp_host,
         port: Number(c.smtp_port) || 587,
@@ -81,15 +87,18 @@ async function sendEmail(c: Record<string, string>, n: Notification) {
         to: c.to,
         subject: n.title,
         text: n.message,
-        html: `<p><strong>${n.title}</strong></p><p>${n.message.replace(/\n/g, '<br/>')}</p>`,
+        html: `<p><strong>${escapeHtml(n.title)}</strong></p><p>${escapeHtml(n.message).replace(/\n/g, '<br/>')}</p>`,
     });
 }
 
 // ─── Generic Webhook ──────────────────────────────────────────────────────────
 async function sendWebhook(url: string, method: string, headersJson: string, n: Notification) {
     const extra = JSON.parse(headersJson || '{}');
+    const allowedMethods = ['POST', 'PUT', 'PATCH'];
+    const verb = method.toUpperCase();
+    if (!allowedMethods.includes(verb)) throw new Error('Unsupported webhook method');
     await fetchThrow(url, {
-        method,
+        method: verb,
         headers: { 'Content-Type': 'application/json', ...extra },
         body: JSON.stringify({ title: n.title, message: n.message, severity: n.severity }),
     });

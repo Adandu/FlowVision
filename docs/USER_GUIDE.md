@@ -2,7 +2,7 @@
 
 ## What is FlowVision?
 
-FlowVision is a self-hosted, real-time Netflow analyzer built for homelabs and small networks. It receives NetFlow v5/v9 data from your router or firewall, stores it in ClickHouse, and provides a modern web dashboard for traffic analysis.
+FlowVision is a self-hosted, real-time Netflow analyzer built for homelabs and small networks. It receives NetFlow v5 data from your router or firewall, stores it in ClickHouse, and provides a modern web dashboard for traffic analysis.
 
 **Features:**
 - Real-time bandwidth + traffic charts
@@ -21,7 +21,7 @@ FlowVision is a self-hosted, real-time Netflow analyzer built for homelabs and s
 ## Requirements
 
 - Docker with Docker Compose
-- A router/firewall that can export NetFlow v5 or v9 (OPNsense, pfSense, MikroTik, etc.)
+- A router/firewall that can export NetFlow v5 (OPNsense, pfSense, MikroTik, etc.)
 - ~2GB RAM (ClickHouse is memory-hungry for larger datasets)
 - Port 2055/UDP open toward the Docker host
 
@@ -73,7 +73,7 @@ Log in with username `admin` and the password you set in step 2.
 2. Set **Listening interfaces** to your LAN/WAN
 3. Set **Destination** to the IP of your FlowVision host
 4. Set **Port** to `2055`
-5. Set **Version** to `v5` or `v9`
+5. Set **Version** to `v5`
 6. Click Save and Apply
 
 ### pfSense
@@ -182,7 +182,7 @@ Go to **Alerts** in the top navigation.
 4. Set the threshold value
 5. Click **Create Alert**
 
-Alerts automatically send to all configured notification channels.
+Alerts are evaluated when the Alerts API is read, and triggered alerts send to all configured notification channels. For strict background evaluation, poll `/api/alerts` from a scheduler.
 
 ---
 
@@ -227,7 +227,7 @@ If configured by an administrator, FlowVision can provide an **AI-generated summ
 **Q: I see no data on the dashboard**
 - Check that your router is sending NetFlow to the correct IP/port
 - Run `docker logs flowvision` and look for Telegraf output
-- Check ClickHouse: `docker exec flowvision clickhouse-client --query "SELECT count() FROM flowvision.flows"`
+- Check ClickHouse: `docker exec flowvision clickhouse-client --query "SELECT count() FROM flows"`
 
 **Q: Login fails with the correct password**
 - Make sure `AUTH_MODE=local` is set in docker-compose.yml

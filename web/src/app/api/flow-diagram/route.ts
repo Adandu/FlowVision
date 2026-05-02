@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
+import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -9,6 +10,10 @@ export async function GET(request: Request) {
 
     if (!src_ip) {
         return NextResponse.json({ success: false, error: 'Missing src_ip' }, { status: 400 });
+    }
+
+    if (!/^[0-9a-fA-F:.]+$/.test(src_ip)) {
+        return NextResponse.json({ success: false, error: 'Invalid src_ip' }, { status: 400 });
     }
 
     let timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
@@ -33,13 +38,13 @@ export async function GET(request: Request) {
                 ) AS port_proto,
                 SUM(bytes) as total_bytes
             FROM flows 
-            WHERE (src_ip = '${src_ip}' OR dst_ip = '${src_ip}') AND ${timeFilter}
+            WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
             GROUP BY dst_ip, port_proto
             ORDER BY total_bytes DESC
             LIMIT 50
         `;
 
-        const res = await clickhouse.query({ query, format: 'JSONEachRow' });
+        const res = await clickhouse.query({ query, query_params: { ip: src_ip }, format: 'JSONEachRow' });
         const data = await res.json();
 
         const { getAppName } = await import('@/lib/protocols');
@@ -61,7 +66,14 @@ export async function GET(request: Request) {
             };
         });
 
-        await applyAliases(mappedData);
+        const user = await getCurrentUser();
+        if (!user) {
+            mappedData.forEach((row: any) => {
+                row.dst_ip = obfuscateIp(row.dst_ip);
+            });
+        } else {
+            await applyAliases(mappedData);
+        }
 
         return NextResponse.json({ success: true, data: mappedData });
 

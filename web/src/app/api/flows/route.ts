@@ -70,7 +70,8 @@ export async function GET(request: Request) {
                 STEP 3`;
     }
 
-    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const parsedLimit = parseInt(searchParams.get('limit') || '10', 10);
+    const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 10, 1), 100);
 
     const topDestinationsQuery = `
           SELECT dst_ip AS ip, SUM(bytes) as total_bytes
@@ -119,9 +120,6 @@ export async function GET(request: Request) {
       clickhouse.query({ query: trafficDirectionQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: geoMapDataQuery, format: 'JSONEachRow' }).then(res => res.json()),
     ]);
-
-    // Debug logging for inbound/outbound traffic
-    console.log('[flows] trafficDirection raw result:', JSON.stringify(trafficDirection));
 
     const { getAppName } = await import('@/lib/protocols');
 

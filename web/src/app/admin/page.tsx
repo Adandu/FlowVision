@@ -65,7 +65,7 @@ export default function AdminPage() {
                     <div className="bg-gray-900/40 border border-gray-800 rounded-xl p-5">
                         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Server className="w-4 h-4" />System</h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div><p className="text-gray-500 text-xs mb-1">Version</p><p className="text-gray-200 font-mono">1.3.0</p></div>
+                            <div><p className="text-gray-500 text-xs mb-1">Version</p><p className="text-gray-200 font-mono">1.3.7</p></div>
                             <div><p className="text-gray-500 text-xs mb-1">Auth Mode</p><p className="text-gray-200 font-mono">{process.env.AUTH_MODE || 'env-var'}</p></div>
                             <div><p className="text-gray-500 text-xs mb-1">Database</p><p className="text-gray-200 font-mono">ClickHouse</p></div>
                             <div><p className="text-gray-500 text-xs mb-1">Runtime</p><p className="text-gray-200 font-mono">Next.js 16</p></div>

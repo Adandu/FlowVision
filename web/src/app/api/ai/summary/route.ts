@@ -62,18 +62,22 @@ async function getTrafficSnapshot(interval: string): Promise<string> {
 
 async function getIPSnapshot(ip: string, interval: string): Promise<string> {
     const timeFilter = interval === '24h' ? '24 HOUR' : interval === '1w' ? '1 WEEK' : '1 HOUR';
+    if (!/^[0-9a-fA-F:.]+$/.test(ip)) return 'Invalid IP address.';
     try {
         const [outgoing, incoming, ports] = await Promise.all([
             clickhouse.query({
-                query: `SELECT dst_ip, SUM(bytes) as bytes FROM flows WHERE (src_ip = '${ip}') AND timestamp >= now() - INTERVAL ${timeFilter} GROUP BY dst_ip ORDER BY bytes DESC LIMIT 5`,
+                query: `SELECT dst_ip, SUM(bytes) as bytes FROM flows WHERE (src_ip = {ip:String}) AND timestamp >= now() - INTERVAL ${timeFilter} GROUP BY dst_ip ORDER BY bytes DESC LIMIT 5`,
+                query_params: { ip },
                 format: 'JSONEachRow'
             }).then(r => r.json<any>()),
             clickhouse.query({
-                query: `SELECT src_ip, SUM(bytes) as bytes FROM flows WHERE (dst_ip = '${ip}') AND timestamp >= now() - INTERVAL ${timeFilter} GROUP BY src_ip ORDER BY bytes DESC LIMIT 5`,
+                query: `SELECT src_ip, SUM(bytes) as bytes FROM flows WHERE (dst_ip = {ip:String}) AND timestamp >= now() - INTERVAL ${timeFilter} GROUP BY src_ip ORDER BY bytes DESC LIMIT 5`,
+                query_params: { ip },
                 format: 'JSONEachRow'
             }).then(r => r.json<any>()),
             clickhouse.query({
-                query: `SELECT dst_port, SUM(bytes) as bytes FROM flows WHERE (src_ip = '${ip}' OR dst_ip = '${ip}') AND timestamp >= now() - INTERVAL ${timeFilter} GROUP BY dst_port ORDER BY bytes DESC LIMIT 5`,
+                query: `SELECT dst_port, SUM(bytes) as bytes FROM flows WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND timestamp >= now() - INTERVAL ${timeFilter} GROUP BY dst_port ORDER BY bytes DESC LIMIT 5`,
+                query_params: { ip },
                 format: 'JSONEachRow'
             }).then(r => r.json<any>()),
         ]);

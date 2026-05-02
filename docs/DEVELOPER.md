@@ -79,7 +79,7 @@ netflow-analyzer/
     │       ├── notifications.ts # Notification dispatcher: Discord/NTFY/Slack/Telegram/Email/Webhook/Apprise
     │       └── timezone.tsx     # Timezone list (sorted by GMT offset), React context, useTimezone hook, formatTimestamp
     │
-    └── middleware.ts            # Auth enforcement: disabled / local (JWT) / proxy (headers)
+    └── proxy.ts                 # Auth enforcement: disabled / local (JWT) / proxy (headers)
 ```
 
 ---
@@ -131,8 +131,8 @@ Stores channel config as JSON string in `config` column.
 ## Authentication Flow
 
 1. `AUTH_MODE=disabled` → all routes pass through (no login required)
-2. `AUTH_MODE=local` → middleware reads `flowvision_token` HttpOnly cookie → verifies HS256 JWT with `JWT_SECRET` → if invalid, redirects to `/login`
-3. `AUTH_MODE=proxy` → middleware trusts `Remote-User` or `X-Forwarded-User` headers from reverse proxy
+2. `AUTH_MODE=local` → the Next.js proxy reads `flowvision_token` HttpOnly cookie → verifies HS256 JWT with `JWT_SECRET` → if invalid, redirects to `/login`
+3. `AUTH_MODE=proxy` → the Next.js proxy trusts `Remote-User` or `X-Forwarded-User` headers from reverse proxy
 
 JWT payload: `{ sub: userId, role: 'admin'|'viewer', iat, exp }`
 
@@ -199,6 +199,6 @@ FlowVision uses a multi-provider AI summary feature:
 Telegraf runs with the `netflow` input plugin (UDP :2055) and a Starlark processor that:
 - Reads NetFlow v5 fields: `src`, `dst`, `in_bytes`, `in_packets`, `protocol` (string), `src_port`, `dst_port`
 - Maps protocol string → UInt8 (TCP=6, UDP=17, ICMP=1)
-- Outputs to ClickHouse `flowvision.flows` table via HTTP
+- Outputs to the ClickHouse `flows` table via HTTP
 
 Key file: `docker/telegraf/telegraf.conf`

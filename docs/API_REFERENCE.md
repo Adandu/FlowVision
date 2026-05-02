@@ -2,7 +2,7 @@
 
 All endpoints are relative to the base URL (e.g. `http://localhost:3000`).  
 All POST/PATCH bodies use `Content-Type: application/json`.  
-Authentication: JWT cookie `flowvision_token` (set by login, verified by middleware).
+Authentication: JWT cookie `flowvision_token` (set by login, verified by the Next.js proxy), except public guest endpoints when guest mode is enabled.
 
 ---
 

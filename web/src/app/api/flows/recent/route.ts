@@ -5,7 +5,8 @@ import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(Number(searchParams.get('limit') || 100), 500);
+    const parsedLimit = Number(searchParams.get('limit') || 100);
+    const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 100, 1), 500);
 
     try {
         const rows = await clickhouse.query({
