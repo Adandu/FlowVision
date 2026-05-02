@@ -58,7 +58,7 @@ export default function IPDetailPage() {
 
         async function fetchAll() {
             setLoading(true);
-            const queryInterval = interval === 'Live' ? '10m' : interval;
+            const queryInterval = interval === 'Live' ? '1m' : interval;
             try {
                 const [ipData, donutsData, diagramData, geoData, rdnsData] = await Promise.all([
                     fetch(`/api/ip/${ip}?interval=${queryInterval}`).then(r => r.json()),
@@ -88,7 +88,7 @@ export default function IPDetailPage() {
         fetchAll();
 
         if (interval === 'Live') {
-            timer = window.setInterval(fetchAll, 3000);
+            timer = window.setInterval(fetchAll, 1000);
         } else {
             timer = window.setInterval(fetchAll, 60000); // 1 minute background poll for everything else
         }

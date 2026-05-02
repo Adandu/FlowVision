@@ -18,6 +18,7 @@ export async function GET(request: Request) {
 
     let timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
     switch (interval) {
+        case '1m': timeFilter = 'timestamp >= now() - INTERVAL 1 MINUTE'; break;
         case '10m': timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE'; break;
         case '1h': timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; break;
         case '24h': timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR'; break;

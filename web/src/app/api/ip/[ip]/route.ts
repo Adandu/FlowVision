@@ -15,6 +15,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
     let fillStep = '3600';
 
     switch (interval) {
+        case '1m':
+            timeFilter = 'timestamp >= now() - INTERVAL 1 MINUTE';
+            timeGroup = 'toStartOfInterval(timestamp, INTERVAL 1 SECOND)';
+            fillFrom = 'toStartOfInterval(now() - INTERVAL 1 MINUTE, INTERVAL 1 SECOND)';
+            fillTo = 'toStartOfInterval(now(), INTERVAL 1 SECOND)';
+            fillStep = '1';
+            break;
         case '10m':
             timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE';
             timeGroup = 'toStartOfMinute(timestamp)';
