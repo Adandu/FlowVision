@@ -131,7 +131,17 @@ export async function GET(request: Request) {
               SELECT src_ip AS ip, SUM(bytes) as total_bytes FROM flows WHERE ${timeFilter} GROUP BY ip
           ) GROUP BY ip ORDER BY total_bytes DESC LIMIT 100`;
 
-    const [timeSeries, topDestinations, topSources, topPortsRaw, protocolBreakdown, trafficDirection, geoMapRaw] = await Promise.all([
+    const activeCountsQuery = `
+          SELECT
+            uniqExact(ip) AS active_ips_distinct,
+            (SELECT uniqExact(toString(dst_port)) FROM flows WHERE ${timeFilter}) AS active_ports
+          FROM (
+            SELECT src_ip AS ip FROM flows WHERE ${timeFilter}
+            UNION ALL
+            SELECT dst_ip AS ip FROM flows WHERE ${timeFilter}
+          )`;
+
+    const [timeSeries, topDestinations, topSources, topPortsRaw, protocolBreakdown, trafficDirection, geoMapRaw, activeCounts] = await Promise.all([
       clickhouse.query({ query: timeSeriesQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: topDestinationsQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: topSourcesQuery, format: 'JSONEachRow' }).then(res => res.json()),
@@ -139,6 +149,7 @@ export async function GET(request: Request) {
       clickhouse.query({ query: protocolBreakdownQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: trafficDirectionQuery, format: 'JSONEachRow' }).then(res => res.json()),
       clickhouse.query({ query: geoMapDataQuery, format: 'JSONEachRow' }).then(res => res.json()),
+      clickhouse.query({ query: activeCountsQuery, format: 'JSONEachRow' }).then(res => res.json()),
     ]);
 
     const { getAppName } = await import('@/lib/protocols');
@@ -266,9 +277,11 @@ export async function GET(request: Request) {
       await applyAliases(geoTraffic);
     }
 
+    const counts = (activeCounts as any[])[0] || {};
+
     return NextResponse.json({
       success: true,
-      data: { timeSeries, topDestinations, topSources, topPorts, protocolBreakdown, trafficDirection: trafficDirection[0] || {}, geoTraffic, topServices }
+      data: { timeSeries, topDestinations, topSources, topPorts, protocolBreakdown, trafficDirection: trafficDirection[0] || {}, geoTraffic, topServices, activeIpCount: Number(counts.active_ips_distinct) || 0, activePortCount: Number(counts.active_ports) || 0 }
     });
   } catch (error) {
     console.error('ClickHouse Query Error:', error);

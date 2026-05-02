@@ -26,56 +26,84 @@ export async function GET(request: Request) {
     }
 
     try {
-        // Find top destinations and ports from this source IP over the interval
-        const query = `
-            SELECT 
+        const { getAppName } = await import('@/lib/protocols');
+
+        // Outgoing: flows initiated by this IP (src_ip = searched IP)
+        const outgoingQuery = `
+            SELECT
                 dst_ip,
                 multiIf(
-                    protocol = 6, concat('TCP ', toString(dst_port)), 
-                    protocol = 17, concat('UDP ', toString(dst_port)), 
-                    protocol = 1, 'ICMP', 
+                    protocol = 6, concat('TCP ', toString(dst_port)),
+                    protocol = 17, concat('UDP ', toString(dst_port)),
+                    protocol = 1, 'ICMP',
                     'Other'
                 ) AS port_proto,
                 SUM(bytes) as total_bytes
-            FROM flows 
-            WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
+            FROM flows
+            WHERE src_ip = {ip:String} AND ${timeFilter}
             GROUP BY dst_ip, port_proto
             ORDER BY total_bytes DESC
-            LIMIT 50
+            LIMIT 30
         `;
 
-        const res = await clickhouse.query({ query, query_params: { ip: src_ip }, format: 'JSONEachRow' });
-        const data = await res.json();
+        // Incoming: flows arriving at this IP (dst_ip = searched IP), using src_ip as peer
+        const incomingQuery = `
+            SELECT
+                src_ip,
+                multiIf(
+                    protocol = 6, concat('TCP ', toString(dst_port)),
+                    protocol = 17, concat('UDP ', toString(dst_port)),
+                    protocol = 1, 'ICMP',
+                    'Other'
+                ) AS port_proto,
+                SUM(bytes) as total_bytes
+            FROM flows
+            WHERE dst_ip = {ip:String} AND ${timeFilter}
+            GROUP BY src_ip, port_proto
+            ORDER BY total_bytes DESC
+            LIMIT 20
+        `;
 
-        const { getAppName } = await import('@/lib/protocols');
+        const [outgoingRaw, incomingRaw] = await Promise.all([
+            clickhouse.query({ query: outgoingQuery, query_params: { ip: src_ip }, format: 'JSONEachRow' }).then(r => r.json()),
+            clickhouse.query({ query: incomingQuery, query_params: { ip: src_ip }, format: 'JSONEachRow' }).then(r => r.json()),
+        ]);
 
-        // Map ports to L7 Apps
-        const mappedData = data.map((row: any) => {
-            let appName = row.port_proto;
-            if (appName.startsWith('TCP ') || appName.startsWith('UDP ')) {
-                const portNum = parseInt(appName.split(' ')[1], 10);
+        function mapPort(portProto: string): string {
+            if (portProto.startsWith('TCP ') || portProto.startsWith('UDP ')) {
+                const portNum = parseInt(portProto.split(' ')[1], 10);
                 if (!isNaN(portNum)) {
                     const l7 = getAppName(portNum);
-                    if (!l7.startsWith('Port ')) appName = l7;
+                    if (!l7.startsWith('Port ')) return l7;
                 }
             }
-            return {
-                dst_ip: row.dst_ip,
-                app: appName,
-                bytes: Number(row.total_bytes)
-            };
-        });
+            return portProto;
+        }
+
+        const outgoing = outgoingRaw.map((row: any) => ({
+            dst_ip: row.dst_ip,
+            app: mapPort(row.port_proto),
+            bytes: Number(row.total_bytes),
+            direction: 'out' as const,
+        }));
+
+        const incoming = incomingRaw.map((row: any) => ({
+            dst_ip: row.src_ip, // re-use dst_ip field so chart component is unchanged; value is the peer
+            app: mapPort(row.port_proto),
+            bytes: Number(row.total_bytes),
+            direction: 'in' as const,
+        }));
+
+        const allRows = [...outgoing, ...incoming];
 
         const user = await getCurrentUser();
         if (!user) {
-            mappedData.forEach((row: any) => {
-                row.dst_ip = obfuscateIp(row.dst_ip);
-            });
+            allRows.forEach((row: any) => { row.dst_ip = obfuscateIp(row.dst_ip); });
         } else {
-            await applyAliases(mappedData);
+            await applyAliases(allRows);
         }
 
-        return NextResponse.json({ success: true, data: mappedData });
+        return NextResponse.json({ success: true, data: allRows });
 
     } catch (error) {
         console.error('ClickHouse Query Error:', error);

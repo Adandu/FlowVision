@@ -106,8 +106,8 @@ export default function Dashboard() {
           <StatCard title="Outbound" value={!data && loading ? '...' : formatBits(Number(dir.outbound_bps) || 0)} icon={<ArrowUpRight />} color="orange" span={1} />
           <StatCard title="Inbound" value={!data && loading ? '...' : formatBits(Number(dir.inbound_bps) || 0)} icon={<ArrowDownLeft />} color="teal" span={1} />
           <StatCard title="Internal" value={!data && loading ? '...' : formatBits(Number(dir.internal_bps) || 0)} icon={<ArrowLeftRight />} color="purple" span={1} />
-          <StatCard title="Active IPs" value={!data && loading ? '...' : ((data?.topSources?.length || 0) + (data?.topDestinations?.length || 0)).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} span={1} />
-          <StatCard title="Active Services" value={!data && loading ? '...' : (data?.topPorts?.length || 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} span={1} />
+          <StatCard title="Active IPs" value={!data && loading ? '...' : (data?.activeIpCount ?? 0).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} span={1} />
+          <StatCard title="Active Services" value={!data && loading ? '...' : (data?.activePortCount ?? 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} span={1} />
           <StatCard title="Active Applications" value={!data && loading ? '...' : (data?.topServices?.length || 0).toString()} icon={<Activity />} color="orange" href={`/active-applications?interval=${interval}`} span={1} />
         </div>
 
