@@ -116,10 +116,10 @@ export async function GET(request: Request) {
             sumIf(bytes, NOT ${privateSrc} AND ${privateDst}) AS inbound_bytes,
             sumIf(bytes, ${privateSrc} AND ${privateDst}) AS internal_bytes,
             sum(bytes) AS total_bytes,
-            round(outbound_bytes * 8 / ${intervalSeconds}, 2) AS outbound_bps,
-            round(inbound_bytes * 8 / ${intervalSeconds}, 2) AS inbound_bps,
-            round(internal_bytes * 8 / ${intervalSeconds}, 2) AS internal_bps,
-            round(total_bytes * 8 / ${intervalSeconds}, 2) AS total_bps
+            round(sumIf(bytes, (${privateSrc} AND NOT ${privateDst}) AND timestamp >= now() - INTERVAL 3 MINUTE) * 8 / 180, 2) AS outbound_bps,
+            round(sumIf(bytes, (NOT ${privateSrc} AND ${privateDst}) AND timestamp >= now() - INTERVAL 3 MINUTE) * 8 / 180, 2) AS inbound_bps,
+            round(sumIf(bytes, (${privateSrc} AND ${privateDst}) AND timestamp >= now() - INTERVAL 3 MINUTE) * 8 / 180, 2) AS internal_bps,
+            round(sumIf(bytes, timestamp >= now() - INTERVAL 3 MINUTE) * 8 / 180, 2) AS total_bps
           FROM flows WHERE ${timeFilter}`;
 
     const geoMapDataQuery = `
@@ -178,6 +178,13 @@ export async function GET(request: Request) {
     const { identifyService } = await import('@/lib/services');
     const serviceMap = new Map<string, { total_bytes: number; color: string }>();
 
+    // Deterministic color from a string (for unknown ASNs)
+    function asnColor(label: string): string {
+      let h = 0;
+      for (let i = 0; i < label.length; i++) h = (Math.imul(31, h) + label.charCodeAt(i)) | 0;
+      return `hsl(${((h >>> 0) % 360)}, 45%, 52%)`;
+    }
+
     geoMapRaw.forEach((g: any) => {
       const geo = geoDataMap[g.ip];
       let assigned = false;
@@ -191,11 +198,13 @@ export async function GET(request: Request) {
         }
       }
 
-      // If we couldn't map this high-volume public IP to a known Service, aggregate into 'Other'
+      // Unknown public IP — label by ASN/ISP name instead of generic 'Other'
       if (!assigned && geo && !geo.private) {
-        const current = serviceMap.get('Other') || { total_bytes: 0, color: '#4B5563' }; // Neutral Gray
+        const label = geo.asn || geo.isp || 'Other';
+        const color = label === 'Other' ? '#4B5563' : asnColor(label);
+        const current = serviceMap.get(label) || { total_bytes: 0, color };
         current.total_bytes += Number(g.total_bytes);
-        serviceMap.set('Other', current);
+        serviceMap.set(label, current);
       }
     });
 

@@ -82,7 +82,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             // Bandwidth timeline as source
             clickhouse.query({
                 query: `
-                    SELECT ${timeGroup} AS time, toUInt64(SUM(bytes)) AS bytes, round(toUInt64(SUM(bytes)) * 8 / ${fillStep}, 2) AS bits_per_second
+                    SELECT ${timeGroup} AS time, toUInt64(SUM(bytes)) AS bytes, round(bytes * 8 / ${fillStep}, 2) AS bits_per_second
                     FROM flows
                     WHERE src_ip = {ip:String} AND ${timeFilter}
                     GROUP BY time ORDER BY time ASC
@@ -95,7 +95,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             // Bandwidth timeline as destination
             clickhouse.query({
                 query: `
-                    SELECT ${timeGroup} AS time, toUInt64(SUM(bytes)) AS bytes, round(toUInt64(SUM(bytes)) * 8 / ${fillStep}, 2) AS bits_per_second
+                    SELECT ${timeGroup} AS time, toUInt64(SUM(bytes)) AS bytes, round(bytes * 8 / ${fillStep}, 2) AS bits_per_second
                     FROM flows
                     WHERE dst_ip = {ip:String} AND ${timeFilter}
                     GROUP BY time ORDER BY time ASC
