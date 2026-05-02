@@ -88,7 +88,7 @@ export default function IPDetailPage() {
         fetchAll();
 
         if (interval === 'Live') {
-            timer = window.setInterval(fetchAll, 300);
+            timer = window.setInterval(fetchAll, 1000);
         } else {
             timer = window.setInterval(fetchAll, 60000); // 1 minute background poll for everything else
         }

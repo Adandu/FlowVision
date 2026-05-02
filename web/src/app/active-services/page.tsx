@@ -40,7 +40,7 @@ function ActiveServicesContent() {
 
         fetchData();
         if (interval === 'Live') {
-            timer = window.setInterval(fetchData, 300);
+            timer = window.setInterval(fetchData, 1000);
         } else {
             timer = window.setInterval(fetchData, 60000);
         }
