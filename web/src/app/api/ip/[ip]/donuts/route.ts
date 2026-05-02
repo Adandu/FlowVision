@@ -73,56 +73,40 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
         const { identifyService } = await import('@/lib/services');
         const serviceMap = new Map<string, { total_bytes: number; color: string }>();
 
+        function asnColor(label: string): string {
+            let h = 0;
+            for (let i = 0; i < label.length; i++) h = (Math.imul(31, h) + label.charCodeAt(i)) | 0;
+            return `hsl(${((h >>> 0) % 360)}, 45%, 52%)`;
+        }
+
+        function addToServiceMap(ip: string, bytes: number) {
+            const geo = geoDataMap[ip];
+            if (!geo || geo.private) return;
+            const asnStr = geo.asn || geo.isp;
+            const svc = asnStr ? identifyService(asnStr) : null;
+            if (svc) {
+                const current = serviceMap.get(svc.name) || { total_bytes: 0, color: svc.color };
+                current.total_bytes += Number(bytes);
+                serviceMap.set(svc.name, current);
+            } else {
+                const label = asnStr || 'Other';
+                const color = label === 'Other' ? '#4B5563' : asnColor(label);
+                const current = serviceMap.get(label) || { total_bytes: 0, color };
+                current.total_bytes += Number(bytes);
+                serviceMap.set(label, current);
+            }
+        }
+
         incoming.forEach((r: any) => {
             const geo = geoDataMap[r.src_ip];
-            let assigned = false;
-            if (geo) { // Keep geo data assignment for incoming
-                r.lat = geo.lat;
-                r.lon = geo.lon;
-                r.country = geo.country;
-                r.city = geo.city;
-            }
-            // Add service map logic for incoming
-            if (geo && !geo.private && (geo.asn || geo.isp)) {
-                const svc = identifyService(geo.asn || geo.isp);
-                if (svc) {
-                    const current = serviceMap.get(svc.name) || { total_bytes: 0, color: svc.color };
-                    current.total_bytes += Number(r.bytes);
-                    serviceMap.set(svc.name, current);
-                    assigned = true;
-                }
-            }
-            if (!assigned && geo && !geo.private) {
-                const current = serviceMap.get('Other') || { total_bytes: 0, color: '#4B5563' };
-                current.total_bytes += Number(r.bytes);
-                serviceMap.set('Other', current);
-            }
+            if (geo) { r.lat = geo.lat; r.lon = geo.lon; r.country = geo.country; r.city = geo.city; }
+            addToServiceMap(r.src_ip, r.bytes);
         });
 
         outgoing.forEach((r: any) => {
             const geo = geoDataMap[r.dst_ip];
-            let assigned = false;
-            if (geo) {
-                r.lat = geo.lat;
-                r.lon = geo.lon;
-                r.country = geo.country;
-                r.city = geo.city;
-
-                if (!geo.private && (geo.asn || geo.isp)) { // Added (geo.asn || geo.isp) check
-                    const svc = identifyService(geo.asn || geo.isp);
-                    if (svc) {
-                        const current = serviceMap.get(svc.name) || { total_bytes: 0, color: svc.color };
-                        current.total_bytes += Number(r.bytes);
-                        serviceMap.set(svc.name, current);
-                        assigned = true;
-                    }
-                }
-            }
-            if (!assigned && geo && !geo.private) { // Moved outside the initial 'if (geo)' block
-                const current = serviceMap.get('Other') || { total_bytes: 0, color: '#4B5563' };
-                current.total_bytes += Number(r.bytes);
-                serviceMap.set('Other', current);
-            }
+            if (geo) { r.lat = geo.lat; r.lon = geo.lon; r.country = geo.country; r.city = geo.city; }
+            addToServiceMap(r.dst_ip, r.bytes);
         });
 
         const topServices = Array.from(serviceMap.entries())

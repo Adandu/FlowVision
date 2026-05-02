@@ -57,7 +57,7 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
                     day: '2-digit', month: '2-digit',
                     hour12: false,
                 }).format(localDate);
-                return `${timeStr}<br/>Bandwidth: <b>${formatBits(val)}</b>`;
+                return `${timeStr}<br/>Total Bandwidth: <b>${formatBits(val)}</b>`;
             }
         },
         grid: { left: '3%', right: '4%', bottom: '15%', containLabel: true },
