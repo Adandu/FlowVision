@@ -12,7 +12,7 @@ export async function GET(request: Request) {
         const rows = await clickhouse.query({
             query: `
                 SELECT
-                    max(timestamp) as timestamp,
+                    max(ts) as timestamp,
                     src_ip,
                     dst_ip,
                     src_port,
@@ -20,8 +20,11 @@ export async function GET(request: Request) {
                     multiIf(protocol = 6, 'TCP', protocol = 17, 'UDP', protocol = 1, 'ICMP', 'Other') AS protocol,
                     SUM(bytes) as bytes,
                     SUM(packets) as packets
-                FROM flows
-                WHERE timestamp >= now() - INTERVAL 24 HOUR
+                FROM (
+                    SELECT timestamp AS ts, src_ip, dst_ip, src_port, dst_port, protocol, bytes, packets
+                    FROM flows
+                    WHERE timestamp >= now() - INTERVAL 24 HOUR
+                )
                 GROUP BY src_ip, dst_ip, src_port, dst_port, protocol
                 ORDER BY timestamp DESC
                 LIMIT ${limit}
