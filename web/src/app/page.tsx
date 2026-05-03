@@ -1,45 +1,38 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import { Activity, Globe, Clock, Server, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, List } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useFilters } from '@/hooks/useFilters';
 import Navbar from '@/components/Navbar';
+import FilterBar from '@/components/FilterBar';
 import StatCard from '@/components/StatCard';
 import SectionCard from '@/components/SectionCard';
-import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
+import { useTimezone, getTimezoneOffsetMinutes } from '@/lib/timezone';
 import { formatBits } from '@/lib/formatters';
 
-const BandwidthChart = dynamic(() => import('@/components/charts/BandwidthChart'), { ssr: false });
-const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
-const TopPortsChart = dynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
-const ProtocolChart = dynamic(() => import('@/components/charts/ProtocolChart'), { ssr: false });
-const GeoMapChart = dynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
-const TopServicesCard = dynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
-const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
-const AISummaryWidget = dynamic(() => import('@/components/AISummaryWidget'), { ssr: false });
+const BandwidthChart = nextDynamic(() => import('@/components/charts/BandwidthChart'), { ssr: false });
+const TopHostsChart = nextDynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
+const TopPortsChart = nextDynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
+const ProtocolChart = nextDynamic(() => import('@/components/charts/ProtocolChart'), { ssr: false });
+const GeoMapChart = nextDynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
+const TopServicesCard = nextDynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
+const FlowTable = nextDynamic(() => import('@/components/FlowTable'), { ssr: false });
+const AISummaryWidget = nextDynamic(() => import('@/components/AISummaryWidget'), { ssr: false });
 
-type IntervalType = '10m' | '1h' | '24h' | '1w' | '1mo';
-
-export default function Dashboard() {
+function DashboardContent() {
   const { timezone } = useTimezone();
   const router = useRouter();
-  const [interval, setIntervalState] = useState<IntervalType | 'Live'>('Live');
+  const { interval, toApiParams, activeCount, ...filterRest } = useFilters('Live');
   const [data, setData] = useState<any>(null);
   const [flows, setFlows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const isLoggedIn = useAuth();
-
-  const intervals: { label: string; value: IntervalType | 'Live' }[] = [
-    { label: 'Live', value: 'Live' },
-    { label: '10 Mins', value: '10m' },
-    { label: '1 Hour', value: '1h' },
-    { label: '24 Hours', value: '24h' },
-    { label: '1 Week', value: '1w' },
-    { label: '1 Month', value: '1mo' },
-  ];
 
   useEffect(() => {
     let isMounted = true;
@@ -48,11 +41,12 @@ export default function Dashboard() {
     async function fetchData() {
       setLoading(true);
       try {
-        // If Live, fetch the last 1m to show real-time spikes in 1s buckets
-        const queryInterval = interval === 'Live' ? '1m' : interval;
+        const apiParams = toApiParams();
+        const queryInterval = apiParams.interval === 'Live' ? '1m' : apiParams.interval;
+        const params = new URLSearchParams({ ...apiParams, interval: queryInterval });
         const [flowsRes, recentRes] = await Promise.all([
-          fetch(`/api/flows?interval=${queryInterval}`),
-          fetch('/api/flows/recent'),
+          fetch(`/api/flows?${params}`),
+          fetch(`/api/flows/recent?${params}`),
         ]);
         const json = await flowsRes.json();
         if (isMounted && json.success) setData(json.data);
@@ -77,7 +71,8 @@ export default function Dashboard() {
     }
 
     return () => { isMounted = false; clearInterval(timer); };
-  }, [interval]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interval, filterRest.srcIp, filterRest.dstIp, filterRest.port, filterRest.protocol, filterRest.from, filterRest.to]);
 
   const dir = data?.trafficDirection || {};
 
@@ -89,17 +84,13 @@ export default function Dashboard() {
         {/* AI Summary Widget - shows only if AI is configured */}
         <AISummaryWidget interval={interval === 'Live' ? '10m' : interval} context="dashboard" />
 
-        {/* Interval selector */}
-        <div className="flex space-x-2 justify-end">
-          {intervals.map((int) => (
-            <button key={int.value} onClick={() => setIntervalState(int.value)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${interval === int.value
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-transparent'}`}>
-              {int.label}
-            </button>
-          ))}
-        </div>
+        {/* Global Filter Bar */}
+        <FilterBar
+          filters={{ interval, ...filterRest }}
+          setFilter={filterRest.setFilter}
+          clearAll={filterRest.clearAll}
+          activeCount={activeCount}
+        />
 
         {/* Header Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -187,5 +178,13 @@ export default function Dashboard() {
         </SectionCard>
       </main>
     </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-950" />}>
+      <DashboardContent />
+    </Suspense>
   );
 }
