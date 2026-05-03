@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [2.0.0] - 2026-05-04
+
+### Added
+- **Global Filter Bar** — all pages now share a unified filter bar with time range presets (Live / 10m / 1h / 24h / 1w / 1mo / Custom) plus src IP/CIDR, dst IP/CIDR, port, and protocol filters persisted in the URL query string.
+- **SQL-safe filter utilities** (`lib/queryFilters.ts`) — `buildTimeFilter`, `buildIpFilter` (supports exact IP and CIDR), `buildProtocolFilter`, `buildPortFilter`, `combineFilters` with strict regex validation to prevent SQL injection.
+- **Flow Log upgrades** — added direction filter (All / Outbound / Inbound / Internal), minimum flow size filter, display limit control, and CSV export.
+- **IP Detail page — protocol breakdown table** — shows exact bytes and flow count per protocol (TCP/UDP/ICMP/Other) with click-through to filtered Flow Log.
+- **IP Detail page — full port breakdown table** — all ports observed for the IP, with service name, protocol, bytes, flow count, and click-through to Flow Log filtered by IP + port. Scrollable, no arbitrary cap.
+- **IP Detail page — CSV export** — downloads all flows for the IP in the selected time interval.
+- **IP Detail page — time range from FilterBar** — interval is now URL-persisted, linkable, and uses the same presets as the rest of the app.
+- **Compare page** (`/compare`) — pick two arbitrary time periods, optionally scope by IP/CIDR, and see side-by-side bandwidth bar chart, summary delta table (total/outbound/inbound/internal traffic, flow count, unique IPs), top destinations/sources delta, protocol breakdown delta, and CSV export of the comparison summary.
+- **Compare nav link** — added to desktop and mobile navigation.
+- **Flows CSV export API** (`/api/flows/export`) — authenticated-only, respects all active filters including direction and min-bytes.
+- **IP flows CSV export API** (`/api/ip/[ip]/export`) — authenticated-only, exports all flows involving the given IP for the selected interval.
+
+### Changed
+- Dashboard, Flow Log, and IP Detail pages now use URL-persisted filter state via `useFilters` hook; filters survive page refresh and are shareable via URL.
+- IP Detail API now returns `protocolBreakdown` and `portBreakdown` (all ports, with app names) alongside the existing data; peer limit raised to 50.
+
+---
+
 ## [1.3.7] - 2026-03-02
 
 ### Fixed

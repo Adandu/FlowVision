@@ -1,19 +1,23 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
-import { applyAliases } from '@/lib/aliases';
-import { getCurrentUser, obfuscateIp } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { buildTimeFilter, buildIpFilter, buildProtocolFilter, buildPortFilter, combineFilters } from '@/lib/queryFilters';
 
 export async function GET(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
-  const parsedLimit = Number(searchParams.get('limit') || 100);
-  const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 100, 1), 500);
+  const parsedLimit = Number(searchParams.get('limit') || 10000);
+  const limit = Math.min(Math.max(Number.isFinite(parsedLimit) ? parsedLimit : 10000, 1), 10000);
   const interval = searchParams.get('interval') || '24h';
   const from = searchParams.get('from') || '';
   const to = searchParams.get('to') || '';
   const srcIp = searchParams.get('src') || '';
   const dstIp = searchParams.get('dst') || '';
-  const eitherIp = searchParams.get('ip') || ''; // matches src OR dst
+  const eitherIp = searchParams.get('ip') || '';
   const port = searchParams.get('port') || '';
   const protocol = searchParams.get('proto') || '';
   const direction = searchParams.get('direction') || '';
@@ -21,11 +25,9 @@ export async function GET(request: Request) {
 
   const timeFilter = buildTimeFilter({ interval, from, to });
 
-  // Build ip filter — `ip` param matches either direction, `src`/`dst` are directional
   let ipFilter = '';
   if (eitherIp) {
     const ipExact = eitherIp.trim();
-    // simple IP validation reuse from queryFilters logic
     if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ipExact)) {
       ipFilter = `(src_ip = '${ipExact}' OR dst_ip = '${ipExact}')`;
     }
@@ -75,37 +77,27 @@ export async function GET(request: Request) {
       format: 'JSONEachRow',
     }).then(r => r.json());
 
-    const user = await getCurrentUser();
-    const isGuest = !user;
+    const { applyAliases } = await import('@/lib/aliases');
+    await applyAliases(rows);
 
-    const allIps = new Set<string>();
-    rows.forEach((r: any) => {
-      if (r.src_ip) allIps.add(r.src_ip);
-      if (r.dst_ip) allIps.add(r.dst_ip);
+    const header = 'timestamp,src_ip,src_port,dst_ip,dst_port,protocol,bytes,packets\n';
+    const csvRows = (rows as any[]).map(r =>
+      [r.timestamp, r.src_ip, r.src_port, r.dst_ip, r.dst_port, r.protocol, r.bytes, r.packets].join(',')
+    );
+    const csv = header + csvRows.join('\n');
+
+    const now = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+    const filename = `${now}-flows.csv`;
+
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'x-filename': filename,
+      },
     });
-
-    const { batchGeoIPLookup } = await import('@/lib/geoip');
-    const geoDataMap = await batchGeoIPLookup(Array.from(allIps));
-
-    rows.forEach((r: any) => {
-      const srcGeo = geoDataMap[r.src_ip];
-      if (srcGeo) r.src_asn = srcGeo.asn || srcGeo.isp;
-      const dstGeo = geoDataMap[r.dst_ip];
-      if (dstGeo) r.dst_asn = dstGeo.asn || dstGeo.isp;
-    });
-
-    if (isGuest) {
-      rows.forEach((r: any) => {
-        r.src_ip = obfuscateIp(r.src_ip);
-        r.dst_ip = obfuscateIp(r.dst_ip);
-      });
-    } else {
-      await applyAliases(rows);
-    }
-
-    return NextResponse.json({ success: true, data: rows });
   } catch (error) {
-    console.error('Recent flows error:', error);
-    return NextResponse.json({ success: false, error: 'Database query failed' }, { status: 500 });
+    console.error('Export error:', error);
+    return NextResponse.json({ error: 'Export failed' }, { status: 500 });
   }
 }

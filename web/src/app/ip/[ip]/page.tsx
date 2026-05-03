@@ -1,34 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+export const dynamic = 'force-dynamic';
+
+import { Suspense, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle, Clock, ArrowLeftRight } from 'lucide-react';
+import nextDynamic from 'next/dynamic';
+import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle, Clock, ArrowLeftRight, Download, Server } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import StatCard from '@/components/StatCard';
 import SectionCard from '@/components/SectionCard';
+import FilterBar from '@/components/FilterBar';
 import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
 import { useAuth } from '@/hooks/useAuth';
 import { formatBytes } from '@/lib/formatters';
+import { useFilters } from '@/hooks/useFilters';
 
-const BandwidthChart = dynamic(() => import('@/components/charts/BandwidthChart'), { ssr: false });
-const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
-const TopPortsChart = dynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
-const FlowDiagramChart = dynamic(() => import('@/components/charts/FlowDiagramChart'), { ssr: false });
-const GeoMapChart = dynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
-const TopServicesCard = dynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
-const FlowTable = dynamic(() => import('@/components/FlowTable'), { ssr: false });
-const AISummaryWidget = dynamic(() => import('@/components/AISummaryWidget'), { ssr: false });
+const BandwidthChart = nextDynamic(() => import('@/components/charts/BandwidthChart'), { ssr: false });
+const TopHostsChart = nextDynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
+const TopPortsChart = nextDynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
+const FlowDiagramChart = nextDynamic(() => import('@/components/charts/FlowDiagramChart'), { ssr: false });
+const GeoMapChart = nextDynamic(() => import('@/components/charts/GeoMapChart'), { ssr: false });
+const TopServicesCard = nextDynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
+const FlowTable = nextDynamic(() => import('@/components/FlowTable'), { ssr: false });
+const AISummaryWidget = nextDynamic(() => import('@/components/AISummaryWidget'), { ssr: false });
 
-type IntervalType = '10m' | '1h' | '24h' | '7d' | '30d';
-
-export default function IPDetailPage() {
+function IPDetailContent() {
     const params = useParams();
     const router = useRouter();
     const ip = decodeURIComponent(params.ip as string);
     const { timezone } = useTimezone();
-    const [interval, setIntervalState] = useState<IntervalType | 'Live'>('24h');
+    const { interval, toApiParams, activeCount, ...filterRest } = useFilters('24h');
     const [data, setData] = useState<any>(null);
     const [donuts, setDonuts] = useState<any>(null);
     const [flowDiagram, setFlowDiagram] = useState<any>(null);
@@ -36,16 +38,8 @@ export default function IPDetailPage() {
     const [hostname, setHostname] = useState<string | null>(null);
     const [displayIp, setDisplayIp] = useState<string>(ip);
     const [loading, setLoading] = useState(true);
+    const [exporting, setExporting] = useState(false);
     const isLoggedIn = useAuth();
-
-    const intervals: { label: string; value: IntervalType | 'Live' }[] = [
-        { label: 'Live', value: 'Live' },
-        { label: '10 Mins', value: '10m' },
-        { label: '1 Hour', value: '1h' },
-        { label: '24 Hours', value: '24h' },
-        { label: '7 Days', value: '7d' },
-        { label: '30 Days', value: '30d' },
-    ];
 
     useEffect(() => {
         if (!ip) return;
@@ -55,11 +49,16 @@ export default function IPDetailPage() {
         async function fetchAll() {
             setLoading(true);
             const queryInterval = interval === 'Live' ? '1m' : interval;
+            const timeParams = new URLSearchParams({ interval: queryInterval });
+            if (interval === 'custom') {
+                if (filterRest.from) timeParams.set('from', filterRest.from);
+                if (filterRest.to) timeParams.set('to', filterRest.to);
+            }
             try {
                 const [ipData, donutsData, diagramData, geoData, rdnsData] = await Promise.all([
-                    fetch(`/api/ip/${ip}?interval=${queryInterval}`).then(r => r.json()),
-                    fetch(`/api/ip/${ip}/donuts?interval=${queryInterval}`).then(r => r.json()),
-                    fetch(`/api/flow-diagram?src_ip=${ip}&interval=${queryInterval}`).then(r => r.json()),
+                    fetch(`/api/ip/${ip}?${timeParams}`).then(r => r.json()),
+                    fetch(`/api/ip/${ip}/donuts?${timeParams}`).then(r => r.json()),
+                    fetch(`/api/flow-diagram?src_ip=${ip}&${timeParams}`).then(r => r.json()),
                     fetch(`/api/geoip/${ip}`).then(r => r.json()),
                     fetch(`/api/rdns/${ip}`).then(r => r.json()),
                 ]);
@@ -93,16 +92,45 @@ export default function IPDetailPage() {
             isMounted = false;
             if (timer) clearInterval(timer);
         };
-    }, [ip, interval]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ip, interval, filterRest.from, filterRest.to]);
+
+    async function handleExport() {
+        setExporting(true);
+        try {
+            const queryInterval = interval === 'Live' ? '1m' : interval;
+            const exportParams = new URLSearchParams({ interval: queryInterval });
+            if (interval === 'custom') {
+                if (filterRest.from) exportParams.set('from', filterRest.from);
+                if (filterRest.to) exportParams.set('to', filterRest.to);
+            }
+            const res = await fetch(`/api/ip/${ip}/export?${exportParams}`);
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = res.headers.get('x-filename') || `${ip}-flows.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } finally {
+            setExporting(false);
+        }
+    }
 
     const summary = data?.summary || {};
+
+    const flowLogBase = `/flow-log`;
+    // Use `ip=` so the flow log shows traffic both TO and FROM this IP
+    const flowLogForIp = (extraParam: string) =>
+        `${flowLogBase}?interval=${interval}&ip=${ip}${extraParam}`;
 
     return (
         <div className="min-h-screen bg-gray-950 pb-12">
             <Navbar />
             <main className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 mt-8 space-y-6">
 
-                {/* Header Area */}
+                {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
                         <Link href="/ip" className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 mb-4 transition-colors w-fit">
@@ -120,23 +148,24 @@ export default function IPDetailPage() {
                             {geo?.isp && !geo?.asn?.includes(geo.isp) && ` · ${geo.isp}`}
                         </p>
                     </div>
-
-                    {/* Interval Selector */}
-                    <div className="flex space-x-2 self-start md:self-auto">
-                        {intervals.map((int) => (
-                            <button
-                                key={int.value}
-                                onClick={() => setIntervalState(int.value)}
-                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${interval === int.value
-                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
-                                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-transparent'
-                                    }`}
-                            >
-                                {int.label}
-                            </button>
-                        ))}
-                    </div>
+                    <button
+                        onClick={handleExport}
+                        disabled={exporting || !data}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-500/10 border border-blue-500/30 text-blue-400 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all self-start md:self-auto"
+                    >
+                        <Download className="w-4 h-4" />
+                        {exporting ? 'Exporting…' : 'Export CSV'}
+                    </button>
                 </div>
+
+                {/* Time range filter (no advanced IP/port filters — we're already on an IP page) */}
+                <FilterBar
+                    filters={{ interval, ...filterRest }}
+                    setFilter={filterRest.setFilter}
+                    clearAll={filterRest.clearAll}
+                    activeCount={activeCount}
+                    showTimeOnly
+                />
 
                 {/* AI Summary Widget */}
                 <AISummaryWidget interval={interval === 'Live' ? '10m' : interval} context="ip" ip={ip} />
@@ -157,7 +186,7 @@ export default function IPDetailPage() {
                             <StatCard title="Last Seen" value={summary.last_seen ? formatTimestamp(summary.last_seen, timezone) : 'Unknown'} icon={<Clock />} color="teal" />
                         </div>
 
-                        {/* 1. Traffic Charts */}
+                        {/* Traffic Charts */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <SectionCard title="Outgoing Traffic Bandwidth" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />}>
                                 {data.timelineAsSrc?.length > 0
@@ -171,7 +200,85 @@ export default function IPDetailPage() {
                             </SectionCard>
                         </div>
 
-                        {/* 2. Flow Diagram — custom padding so the Sankey graph renders flush */}
+                        {/* Protocol Breakdown */}
+                        {data.protocolBreakdown?.length > 0 && (
+                            <SectionCard
+                                title="Protocol Breakdown"
+                                icon={<ArrowLeftRight className="w-4 h-4 text-amber-400" />}
+                            >
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                                            <th className="text-left py-2 pr-4">Protocol</th>
+                                            <th className="text-right py-2 pr-4">Bytes</th>
+                                            <th className="text-right py-2">Flows</th>
+                                            <th className="w-8" />
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.protocolBreakdown.map((r: any) => (
+                                            <tr key={r.proto} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                                <td className="py-2 pr-4 font-mono text-gray-200">{r.proto}</td>
+                                                <td className="text-right py-2 pr-4 text-gray-300">{formatBytes(Number(r.total_bytes))}</td>
+                                                <td className="text-right py-2 text-gray-400">{Number(r.flow_count).toLocaleString()}</td>
+                                                <td className="py-2 pl-2">
+                                                    <Link
+                                                        href={flowLogForIp(`&proto=${r.proto.toLowerCase()}`)}
+                                                        className="text-blue-400 hover:text-blue-300 text-xs"
+                                                        title="View flows"
+                                                    >→</Link>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </SectionCard>
+                        )}
+
+                        {/* Port Breakdown (all ports) */}
+                        {data.portBreakdown?.length > 0 && (
+                            <SectionCard
+                                title={`Port Breakdown (${data.portBreakdown.length} ports)`}
+                                icon={<Server className="w-4 h-4 text-purple-400" />}
+                            >
+                                <div className="max-h-96 overflow-y-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="sticky top-0 bg-gray-900/95">
+                                            <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                                                <th className="text-left py-2 pr-4">Port</th>
+                                                <th className="text-left py-2 pr-4">Service</th>
+                                                <th className="text-left py-2 pr-4">Proto</th>
+                                                <th className="text-right py-2 pr-4">Bytes</th>
+                                                <th className="text-right py-2">Flows</th>
+                                                <th className="w-8" />
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {data.portBreakdown.map((r: any, i: number) => (
+                                                <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                                    <td className="py-2 pr-4 font-mono text-gray-200">{r.port}</td>
+                                                    <td className="py-2 pr-4 text-gray-400 text-xs">
+                                                        {r.app_name && !r.app_name.startsWith('Port') ? r.app_name : '—'}
+                                                    </td>
+                                                    <td className="py-2 pr-4 text-gray-400">{r.proto}</td>
+                                                    <td className="text-right py-2 pr-4 text-gray-300">{formatBytes(Number(r.total_bytes))}</td>
+                                                    <td className="text-right py-2 text-gray-400">{Number(r.flow_count).toLocaleString()}</td>
+                                                    <td className="py-2 pl-2">
+                                                        <Link
+                                                            href={flowLogForIp(`&port=${r.port}`)}
+                                                            className="text-blue-400 hover:text-blue-300 text-xs"
+                                                            title="View flows"
+                                                        >→</Link>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </SectionCard>
+                        )}
+
+                        {/* Flow Diagram */}
                         <div className="bg-gray-900/50 border border-gray-800 rounded-xl px-6 pt-6 pb-2 shadow-xl overflow-hidden">
                             <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                 <Network className="w-4 h-4 text-blue-400" /> Traffic Flow Diagram (Sankey Graph)
@@ -181,7 +288,7 @@ export default function IPDetailPage() {
                             </div>
                         </div>
 
-                        {/* 3. Global Traffic Map */}
+                        {/* Global Traffic Map */}
                         {donuts && (
                             <SectionCard className="overflow-hidden mb-6">
                                 <GeoMapChart
@@ -195,7 +302,7 @@ export default function IPDetailPage() {
                             </SectionCard>
                         )}
 
-                        {/* 4. Donut Graphs & Services */}
+                        {/* Donut Graphs & Services */}
                         {donuts && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <SectionCard title="All Outgoing" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />} className="flex flex-col h-full">
@@ -228,8 +335,43 @@ export default function IPDetailPage() {
                             </div>
                         )}
 
-                        {/* 5. Recent Flows */}
-                        <SectionCard title="Recent Flows" icon={<Activity className="w-5 h-5 text-gray-400" />}>
+                        {/* Top Peers */}
+                        {(data.topPeersAsSrc?.length > 0 || data.topPeersAsDst?.length > 0) && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {data.topPeersAsSrc?.length > 0 && (
+                                    <SectionCard title="Top Destinations (this IP as source)" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />}>
+                                        <TopHostsChart
+                                            data={data.topPeersAsSrc.map((r: any) => ({ ip: r.peer, total_bytes: r.total_bytes }))}
+                                            title="Top Destinations"
+                                            onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)}
+                                        />
+                                    </SectionCard>
+                                )}
+                                {data.topPeersAsDst?.length > 0 && (
+                                    <SectionCard title="Top Sources (this IP as destination)" icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />}>
+                                        <TopHostsChart
+                                            data={data.topPeersAsDst.map((r: any) => ({ ip: r.peer, total_bytes: r.total_bytes }))}
+                                            title="Top Sources"
+                                            onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)}
+                                        />
+                                    </SectionCard>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Recent Flows */}
+                        <SectionCard
+                            title="Recent Flows"
+                            icon={<Activity className="w-5 h-5 text-gray-400" />}
+                            headerRight={
+                                <Link
+                                    href={`${flowLogBase}?interval=${interval}&ip=${ip}`}
+                                    className="text-sm text-blue-400 hover:text-blue-300 hover:underline"
+                                >
+                                    View all in Flow Log →
+                                </Link>
+                            }
+                        >
                             <FlowTable flows={data.recentFlows || []} isGuest={isLoggedIn === false} showNetworkDirection />
                         </SectionCard>
                     </>
@@ -247,5 +389,13 @@ export default function IPDetailPage() {
                 )}
             </main>
         </div>
+    );
+}
+
+export default function IPDetailPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-950" />}>
+            <IPDetailContent />
+        </Suspense>
     );
 }

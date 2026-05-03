@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Activity, Globe, ChevronDown, User, LogOut, Settings, LayoutDashboard, List, Bell, Network, Menu, X } from 'lucide-react';
+import { Activity, Globe, ChevronDown, User, LogOut, Settings, LayoutDashboard, List, Bell, Network, Menu, X, GitCompare } from 'lucide-react';
 import { useTimezone, TIMEZONE_LIST, type TZEntry } from '@/lib/timezone';
 
 export default function Navbar() {
@@ -62,6 +62,9 @@ export default function Navbar() {
                         </Link>
                         <Link href="/alerts" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <Bell className="w-4 h-4" /> Alerts
+                        </Link>
+                        <Link href="/compare" className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <GitCompare className="w-4 h-4" /> Compare
                         </Link>
                     </div>
 
@@ -162,6 +165,9 @@ export default function Navbar() {
                         </Link>
                         <Link href="/alerts" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
                             <Bell className="w-5 h-5 text-gray-400" /> Alerts
+                        </Link>
+                        <Link href="/compare" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-all">
+                            <GitCompare className="w-5 h-5 text-gray-400" /> Compare
                         </Link>
                     </div>
                 )}
