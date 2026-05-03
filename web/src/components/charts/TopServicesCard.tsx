@@ -3,19 +3,12 @@
 import ReactECharts from 'echarts-for-react';
 import { Activity } from 'lucide-react';
 import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chartConstants';
+import { formatBytes } from '@/lib/formatters';
 
 interface Props {
     data: { service: string; total_bytes: number; color: string }[];
     title?: string;
     isGuest?: boolean;
-}
-
-function formatBytes(bytes: number) {
-    if (!bytes) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 const mask = (i: number) => '*'.repeat(5 + (i % 3));
@@ -24,9 +17,9 @@ export default function TopServicesCard({ data, title = 'Top 10 Applications', i
     if (!data || data.length === 0) {
         return (
             <>
-                <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-emerald-400" /> {title}
-                </h3>
+                </h2>
                 <div className="flex-1 flex items-center justify-center">
                     <p className="text-gray-500 text-sm">No specific services detected in this timeframe.</p>
                 </div>
@@ -64,9 +57,9 @@ export default function TopServicesCard({ data, title = 'Top 10 Applications', i
 
     return (
         <>
-            <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                 <Activity className="w-4 h-4 text-emerald-400" /> {title}
-            </h3>
+            </h2>
             <div className="flex-1 w-full relative min-h-0">
                 <ReactECharts option={options} style={{ height: DONUT_HEIGHT, width: '100%' }} />
             </div>

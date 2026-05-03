@@ -2,6 +2,7 @@
 
 import ReactECharts from 'echarts-for-react';
 import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chartConstants';
+import { formatBytes } from '@/lib/formatters';
 
 const COLORS: Record<string, string> = {
     TCP: '#3B82F6',
@@ -10,14 +11,6 @@ const COLORS: Record<string, string> = {
     Other: '#6B7280',
 };
 
-function formatBytes(bytes: number) {
-    if (!bytes) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
 const mask = (i: number) => '*'.repeat(5 + (i % 3));
 
 export default function ProtocolChart({ data, isGuest = false }: { data: { proto: string; total_bytes: number }[]; isGuest?: boolean }) {
@@ -25,7 +18,7 @@ export default function ProtocolChart({ data, isGuest = false }: { data: { proto
         tooltip: {
             trigger: 'item',
             formatter: (params: any) => {
-                return `${params.marker}${params.name}<br/>Bandwidth: <b>${isGuest ? '*****' : formatBytes(params.value)}</b> (${params.percent}%)`;
+                return `${params.marker}${params.name}<br/>Traffic: <b>${isGuest ? '*****' : formatBytes(params.value)}</b> (${params.percent}%)`;
             }
         },
         legend: LEGEND_CONFIG,

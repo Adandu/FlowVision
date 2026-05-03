@@ -7,8 +7,10 @@ import dynamic from 'next/dynamic';
 import { Activity, Globe, Clock, Server, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, List } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/Navbar';
+import StatCard from '@/components/StatCard';
+import SectionCard from '@/components/SectionCard';
 import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
-import { formatBytes, formatBits } from '@/lib/formatters';
+import { formatBits } from '@/lib/formatters';
 
 const BandwidthChart = dynamic(() => import('@/components/charts/BandwidthChart'), { ssr: false });
 const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
@@ -66,14 +68,12 @@ export default function Dashboard() {
       }
     }
 
-    // Initial fetch
     fetchData();
 
-    // Setup polling
     if (interval === 'Live') {
-      timer = window.setInterval(fetchData, 1000); // 1s for Live
+      timer = window.setInterval(fetchData, 1000);
     } else {
-      timer = window.setInterval(fetchData, 60000); // 60 seconds otherwise
+      timer = window.setInterval(fetchData, 60000);
     }
 
     return () => { isMounted = false; clearInterval(timer); };
@@ -104,15 +104,15 @@ export default function Dashboard() {
         {/* Header Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard title="Total Bandwidth" value={!data && loading ? '...' : formatBits(Number(dir.total_bps) || 0)} icon={<ArrowRightLeft />} color="blue" span={2} />
-          <StatCard title="Outbound" value={!data && loading ? '...' : formatBits(Number(dir.outbound_bps) || 0)} icon={<ArrowUpRight />} color="orange" span={1} />
-          <StatCard title="Inbound" value={!data && loading ? '...' : formatBits(Number(dir.inbound_bps) || 0)} icon={<ArrowDownLeft />} color="teal" span={1} />
-          <StatCard title="Internal" value={!data && loading ? '...' : formatBits(Number(dir.internal_bps) || 0)} icon={<ArrowLeftRight />} color="purple" span={1} />
-          <StatCard title="Active IPs" value={!data && loading ? '...' : (data?.activeIpCount ?? 0).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} span={1} />
-          <StatCard title="Active Services" value={!data && loading ? '...' : (data?.activePortCount ?? 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} span={1} />
-          <StatCard title="Active Applications" value={!data && loading ? '...' : (data?.topServices?.length || 0).toString()} icon={<Activity />} color="orange" href={`/active-applications?interval=${interval}`} span={1} />
+          <StatCard title="Outbound" value={!data && loading ? '...' : formatBits(Number(dir.outbound_bps) || 0)} icon={<ArrowUpRight />} color="orange" />
+          <StatCard title="Inbound" value={!data && loading ? '...' : formatBits(Number(dir.inbound_bps) || 0)} icon={<ArrowDownLeft />} color="teal" />
+          <StatCard title="Internal" value={!data && loading ? '...' : formatBits(Number(dir.internal_bps) || 0)} icon={<ArrowLeftRight />} color="purple" />
+          <StatCard title="Active IPs" value={!data && loading ? '...' : (data?.activeIpCount ?? 0).toString()} icon={<Globe />} color="emerald" href={`/active-ips?interval=${interval}`} />
+          <StatCard title="Active Services" value={!data && loading ? '...' : (data?.activePortCount ?? 0).toString()} icon={<Server />} color="purple" href={`/active-services?interval=${interval}`} />
+          <StatCard title="Active Applications" value={!data && loading ? '...' : (data?.topServices?.length || 0).toString()} icon={<Activity />} color="orange" href={`/active-applications?interval=${interval}`} />
         </div>
 
-        {/* Inbound=0 diagnostic hint — shown when traffic exists but no inbound detected */}
+        {/* Inbound=0 diagnostic hint */}
         {data && Number(dir.total_bps) > 0 && Number(dir.inbound_bps) === 0 && (
           <div className="flex items-start gap-2.5 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
             <span className="shrink-0 mt-0.5">⚠️</span>
@@ -125,57 +125,47 @@ export default function Dashboard() {
         )}
 
         {/* Bandwidth Chart */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-gray-400" /> Traffic Overview
-              <span className="text-xs text-gray-500 font-normal ml-2">({timezone})</span>
-            </h2>
-            {loading && <div className="animate-pulse w-3 h-3 rounded-full bg-blue-500" />}
-          </div>
+        <SectionCard
+          title="Traffic Overview"
+          icon={<Clock className="w-5 h-5 text-gray-400" />}
+          titleSuffix={<span className="text-xs text-gray-500 font-normal ml-2">({timezone})</span>}
+          headerRight={loading ? <div className="animate-pulse w-3 h-3 rounded-full bg-blue-500" /> : undefined}
+          className="backdrop-blur-sm"
+        >
           {data && <BandwidthChart data={data.timeSeries} timezone={timezone} tzOffsetMinutes={getTimezoneOffsetMinutes(timezone)} interval={interval} />}
-        </div>
+        </SectionCard>
 
         {/* Protocol + Top Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Top Destinations */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowUpRight className="w-4 h-4 text-blue-400" />Top 10 Destinations</h2>
+          <SectionCard title="Top 10 Destinations" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />} className="backdrop-blur-sm flex flex-col h-full">
             <div className="flex-1 w-full relative">
               {data && <TopHostsChart data={data.topDestinations.slice(0, 10)} title="Top 10 Destinations" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
             </div>
-          </div>
+          </SectionCard>
 
-          {/* Top Sources */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowDownLeft className="w-4 h-4 text-emerald-400" />Top 10 Sources</h2>
+          <SectionCard title="Top 10 Sources" icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />} className="backdrop-blur-sm flex flex-col h-full">
             <div className="flex-1 w-full relative">
               {data && <TopHostsChart data={data.topSources.slice(0, 10)} title="Top 10 Sources" onIpClick={(ip) => router.push(`/ip/${ip}`)} />}
             </div>
-          </div>
+          </SectionCard>
 
-          {/* Top Ports (now Services) */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><Server className="w-4 h-4 text-purple-400" />Top 10 Services</h2>
+          <SectionCard title="Top 10 Services" icon={<Server className="w-4 h-4 text-purple-400" />} className="backdrop-blur-sm flex flex-col h-full">
             <div className="flex-1 w-full relative">
               {data && <TopPortsChart data={data.topPorts.slice(0, 10)} isGuest={isLoggedIn === false} />}
             </div>
-          </div>
+          </SectionCard>
 
-          {/* Protocol Breakdown */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
-            <h2 className="text-base font-semibold text-gray-200 mb-3 flex items-center justify-center gap-1.5"><ArrowLeftRight className="w-4 h-4 text-amber-400" />Protocol Breakdown</h2>
+          <SectionCard title="Protocol Breakdown" icon={<ArrowLeftRight className="w-4 h-4 text-amber-400" />} className="backdrop-blur-sm">
             {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} isGuest={isLoggedIn === false} />}
-          </div>
+          </SectionCard>
 
-          {/* Top Applications (ASN-based) - always rendered even if empty */}
-          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl flex flex-col h-full">
+          <SectionCard className="backdrop-blur-sm flex flex-col h-full">
             <TopServicesCard data={data?.topServices?.slice(0, 10) || []} title="Top 10 Applications" isGuest={isLoggedIn === false} />
-          </div>
+          </SectionCard>
         </div>
 
         {/* Global Traffic Map */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
+        <SectionCard className="backdrop-blur-sm">
           {data && (
             <GeoMapChart
               title="Global Traffic Map"
@@ -183,51 +173,19 @@ export default function Dashboard() {
               onIpClick={(ip) => router.push(`/ip/${ip}`)}
             />
           )}
-        </div>
+        </SectionCard>
 
-        {/* Flow Table — no overlay so IPs remain clickable for guests */}
-        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-200 flex items-center gap-2">
-              <List className="w-5 h-5 text-gray-400" /> Recent Flows
-            </h2>
-            <Link href="/flow-log" className="text-sm text-blue-400 hover:text-blue-300 hover:underline">View all →</Link>
-          </div>
+        {/* Recent Flows */}
+        <SectionCard
+          title="Recent Flows"
+          icon={<List className="w-5 h-5 text-gray-400" />}
+          headerRight={<Link href="/flow-log" className="text-sm text-blue-400 hover:text-blue-300 hover:underline">View all →</Link>}
+          className="backdrop-blur-sm"
+        >
           {flows.length > 0 && <FlowTable flows={flows} isGuest={isLoggedIn === false} showNetworkDirection />}
           {flows.length === 0 && !loading && <p className="text-gray-500 text-sm text-center py-8">No flows recorded yet</p>}
-        </div>
+        </SectionCard>
       </main>
     </div>
   );
 }
-
-function StatCard({ title, value, icon, color, span = 1, href }: { title: string, value: string, icon: React.ReactNode, color: string, span?: number, href?: string }) {
-  const colorMap: Record<string, string> = {
-    blue: 'from-blue-500/20 to-blue-500/0 border-blue-500/30 text-blue-400',
-    emerald: 'from-emerald-500/20 to-emerald-500/0 border-emerald-500/30 text-emerald-400',
-    purple: 'from-purple-500/20 to-purple-500/0 border-purple-500/30 text-purple-400',
-    orange: 'from-orange-500/20 to-orange-500/0 border-orange-500/30 text-orange-400',
-    teal: 'from-teal-500/20 to-teal-500/0 border-teal-500/30 text-teal-400',
-  };
-  const innerClass = `bg-gradient-to-br ${colorMap[color] || colorMap.blue} bg-gray-900/80 border rounded-xl p-5 backdrop-blur-md relative overflow-hidden group hover:shadow-lg transition-all ${!href && span === 2 ? 'col-span-2' : ''} ${href ? 'cursor-pointer hover:border-gray-500/50' : ''} h-full`;
-
-  const content = (
-    <div className={innerClass}>
-      <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-current opacity-5 group-hover:opacity-10 transition-opacity blur-2xl" />
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-medium text-gray-400 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-100">{value}</p>
-        </div>
-        <div className="p-2.5 bg-gray-800/50 rounded-lg border border-gray-700/50">{icon}</div>
-      </div>
-    </div>
-  );
-
-  return href ? (
-    <Link href={href} className={`block ${span === 2 ? 'col-span-2' : ''}`}>
-      {content}
-    </Link>
-  ) : content;
-}
-

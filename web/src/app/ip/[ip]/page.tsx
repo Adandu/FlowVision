@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle, Clock, ArrowLeftRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
+import StatCard from '@/components/StatCard';
+import SectionCard from '@/components/SectionCard';
 import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
 import { useAuth } from '@/hooks/useAuth';
 import { formatBytes } from '@/lib/formatters';
@@ -84,7 +86,7 @@ export default function IPDetailPage() {
         if (interval === 'Live') {
             timer = window.setInterval(fetchAll, 1000);
         } else {
-            timer = window.setInterval(fetchAll, 60000); // 1 minute background poll for everything else
+            timer = window.setInterval(fetchAll, 60000);
         }
 
         return () => {
@@ -119,7 +121,7 @@ export default function IPDetailPage() {
                         </p>
                     </div>
 
-                    {/* Time Interval Selector */}
+                    {/* Interval Selector */}
                     <div className="flex space-x-2 self-start md:self-auto">
                         {intervals.map((int) => (
                             <button
@@ -136,54 +138,40 @@ export default function IPDetailPage() {
                     </div>
                 </div>
 
-                {/* AI Summary Widget - shows only if AI is configured */}
+                {/* AI Summary Widget */}
                 <AISummaryWidget interval={interval === 'Live' ? '10m' : interval} context="ip" ip={ip} />
 
-                {loading && !data && <div className="text-gray-500 py-12 text-center animate-pulse flex items-center justify-center gap-2"><Activity className="w-4 h-4 animate-spin" /> Loading traffic details...</div>}
+                {loading && !data && (
+                    <div className="text-gray-500 py-12 text-center animate-pulse flex items-center justify-center gap-2">
+                        <Activity className="w-4 h-4 animate-spin" /> Loading traffic details...
+                    </div>
+                )}
 
                 {data && (
                     <>
-                        {/* Summary Block */}
+                        {/* Summary Stat Cards */}
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                            <div className="col-span-2 bg-blue-500/5 border border-blue-500/20 rounded-xl p-5">
-                                <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />Bytes Sent</p>
-                                <p className="text-2xl font-bold text-gray-100">{formatBytes(Number(summary.bytes_sent))}</p>
-                            </div>
-                            <div className="col-span-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-5">
-                                <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><ArrowDownLeft className="w-3 h-3" />Bytes Received</p>
-                                <p className="text-2xl font-bold text-gray-100">{formatBytes(Number(summary.bytes_received))}</p>
-                            </div>
-                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-5">
-                                <p className="text-xs text-gray-400 mb-1">Total Flows</p>
-                                <p className="text-2xl font-bold text-gray-100">{(Number(summary.flows_as_src) + Number(summary.flows_as_dst)).toLocaleString()}</p>
-                            </div>
-                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-5">
-                                <p className="text-xs text-gray-400 mb-1">Last Seen</p>
-                                <p className="text-2xl font-bold text-gray-100">{summary.last_seen ? formatTimestamp(summary.last_seen, timezone) : 'Unknown'}</p>
-                            </div>
+                            <StatCard title="Bytes Sent" value={formatBytes(Number(summary.bytes_sent))} icon={<ArrowUpRight />} color="blue" span={2} />
+                            <StatCard title="Bytes Received" value={formatBytes(Number(summary.bytes_received))} icon={<ArrowDownLeft />} color="emerald" span={2} />
+                            <StatCard title="Total Flows" value={(Number(summary.flows_as_src) + Number(summary.flows_as_dst)).toLocaleString()} icon={<ArrowLeftRight />} color="purple" />
+                            <StatCard title="Last Seen" value={summary.last_seen ? formatTimestamp(summary.last_seen, timezone) : 'Unknown'} icon={<Clock />} color="teal" />
                         </div>
 
                         {/* 1. Traffic Charts */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                    <ArrowUpRight className="w-4 h-4 text-blue-400" /> Outgoing Traffic Bandwidth
-                                </h2>
+                            <SectionCard title="Outgoing Traffic Bandwidth" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />}>
                                 {data.timelineAsSrc?.length > 0
                                     ? <BandwidthChart data={data.timelineAsSrc.map((d: any) => ({ time: d.time, total_bytes: d.bytes, bits_per_second: d.bits_per_second ?? 0 }))} timezone={timezone} tzOffsetMinutes={getTimezoneOffsetMinutes(timezone)} interval={interval} />
                                     : <p className="text-gray-500 text-sm text-center py-8">No outgoing traffic in interval</p>}
-                            </div>
-                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                    <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> Incoming Traffic Bandwidth
-                                </h2>
+                            </SectionCard>
+                            <SectionCard title="Incoming Traffic Bandwidth" icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />}>
                                 {data.timelineAsDst?.length > 0
                                     ? <BandwidthChart data={data.timelineAsDst.map((d: any) => ({ time: d.time, total_bytes: d.bytes, bits_per_second: d.bits_per_second ?? 0 }))} timezone={timezone} tzOffsetMinutes={getTimezoneOffsetMinutes(timezone)} interval={interval} />
                                     : <p className="text-gray-500 text-sm text-center py-8">No incoming traffic in interval</p>}
-                            </div>
+                            </SectionCard>
                         </div>
 
-                        {/* 2. Flow Diagram */}
+                        {/* 2. Flow Diagram — custom padding so the Sankey graph renders flush */}
                         <div className="bg-gray-900/50 border border-gray-800 rounded-xl px-6 pt-6 pb-2 shadow-xl overflow-hidden">
                             <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                 <Network className="w-4 h-4 text-blue-400" /> Traffic Flow Diagram (Sankey Graph)
@@ -195,7 +183,7 @@ export default function IPDetailPage() {
 
                         {/* 3. Global Traffic Map */}
                         {donuts && (
-                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl overflow-hidden mb-6">
+                            <SectionCard className="overflow-hidden mb-6">
                                 <GeoMapChart
                                     title="IP Traffic Sources & Destinations"
                                     data={[
@@ -204,68 +192,46 @@ export default function IPDetailPage() {
                                     ].filter(d => d.lat && d.lon)}
                                     onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)}
                                 />
-                            </div>
+                            </SectionCard>
                         )}
 
                         {/* 4. Donut Graphs & Services */}
                         {donuts && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                    <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                        <ArrowUpRight className="w-4 h-4 text-blue-400" /> All Outgoing
-                                    </h2>
+                                <SectionCard title="All Outgoing" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />} className="flex flex-col h-full">
                                     <div className="h-64">
                                         {donuts.outgoing?.length > 0 ? (
                                             <TopHostsChart data={donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes, displayName: d.dst_displayName }))} title="Outgoing" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
-                                </div>
-                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                    <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                        <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> All Incoming
-                                    </h2>
+                                </SectionCard>
+
+                                <SectionCard title="All Incoming" icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />} className="flex flex-col h-full">
                                     <div className="h-64">
                                         {donuts.incoming?.length > 0 ? (
                                             <TopHostsChart data={donuts.incoming.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes, displayName: d.src_displayName }))} title="Incoming" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
-                                </div>
-                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                    <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                        <Activity className="w-4 h-4 text-purple-400" /> All Services
-                                    </h2>
+                                </SectionCard>
+
+                                <SectionCard title="All Services" icon={<Activity className="w-4 h-4 text-purple-400" />} className="flex flex-col h-full">
                                     <div className="h-64">
                                         {donuts.topPorts?.length > 0 ? (
                                             <TopPortsChart data={donuts.topPorts} isGuest={isLoggedIn === false} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
-                                </div>
+                                </SectionCard>
 
-                                {/* Applications Widget - in grid */}
-                                <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl flex flex-col h-full">
-                                    {donuts.topServices && donuts.topServices.length > 0 ? (
-                                        <TopServicesCard data={donuts.topServices} title="All Applications" isGuest={isLoggedIn === false} />
-                                    ) : (
-                                        <>
-                                            <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                                <Activity className="w-4 h-4 text-emerald-400" /> All Applications
-                                            </h2>
-                                            <div className="flex-1 flex items-center justify-center">
-                                                <p className="text-gray-500 text-sm text-center">No application data detected</p>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                <SectionCard className="flex flex-col h-full">
+                                    <TopServicesCard data={donuts.topServices || []} title="All Applications" isGuest={isLoggedIn === false} />
+                                </SectionCard>
                             </div>
                         )}
 
-                        {/* 5. Recent Flows Table — no overlay so IPs remain clickable */}
-                        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                            <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
-                                <Activity className="w-5 h-5 text-gray-400" /> Recent Flows
-                            </h2>
+                        {/* 5. Recent Flows */}
+                        <SectionCard title="Recent Flows" icon={<Activity className="w-5 h-5 text-gray-400" />}>
                             <FlowTable flows={data.recentFlows || []} isGuest={isLoggedIn === false} showNetworkDirection />
-                        </div>
+                        </SectionCard>
                     </>
                 )}
 
