@@ -44,6 +44,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             fillStep = '3600';
             break;
         case '7d':
+        case '1w':
             timeFilter = 'timestamp >= now() - INTERVAL 7 DAY';
             timeGroup = 'toStartOfHour(timestamp)';
             fillFrom = 'toStartOfHour(now() - INTERVAL 7 DAY)';
@@ -51,6 +52,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             fillStep = '3600';
             break;
         case '30d':
+        case '1mo':
             timeFilter = 'timestamp >= now() - INTERVAL 30 DAY';
             timeGroup = 'toStartOfDay(timestamp)';
             fillFrom = 'toStartOfDay(now() - INTERVAL 30 DAY)';
@@ -66,7 +68,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             timelineAsDstRows,
             topPeersAsSrcRows,
             topPeersAsDstRows,
-            topPortsRows,
+            portBreakdownRows,
+            protocolBreakdownRows,
             recentFlowsRows,
         ] = await Promise.all([
             // Summary stats
@@ -112,31 +115,31 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
                 format: 'JSONEachRow',
             }).then(r => r.json()),
 
-            // Top peers when this IP is the source
+            // Top peers when this IP is the source (top 50)
             clickhouse.query({
                 query: `
                     SELECT dst_ip AS peer, SUM(bytes) AS total_bytes, count() AS flow_count
                     FROM flows
                     WHERE src_ip = {ip:String} AND ${timeFilter}
-                    GROUP BY peer ORDER BY total_bytes DESC LIMIT 10
+                    GROUP BY peer ORDER BY total_bytes DESC LIMIT 50
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
             }).then(r => r.json()),
 
-            // Top peers when this IP is the destination
+            // Top peers when this IP is the destination (top 50)
             clickhouse.query({
                 query: `
                     SELECT src_ip AS peer, SUM(bytes) AS total_bytes, count() AS flow_count
                     FROM flows
                     WHERE dst_ip = {ip:String} AND ${timeFilter}
-                    GROUP BY peer ORDER BY total_bytes DESC LIMIT 10
+                    GROUP BY peer ORDER BY total_bytes DESC LIMIT 50
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
             }).then(r => r.json()),
 
-            // Top ports used by this IP
+            // All ports used by this IP (no limit — this is a detail page)
             clickhouse.query({
                 query: `
                     SELECT
@@ -146,7 +149,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
                         count() AS flow_count
                     FROM flows
                     WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
-                    GROUP BY proto, port ORDER BY total_bytes DESC LIMIT 15
+                    GROUP BY proto, port ORDER BY total_bytes DESC
+                `,
+                query_params: { ip },
+                format: 'JSONEachRow',
+            }).then(r => r.json()),
+
+            // Protocol breakdown
+            clickhouse.query({
+                query: `
+                    SELECT
+                        multiIf(protocol = 6, 'TCP', protocol = 17, 'UDP', protocol = 1, 'ICMP', 'Other') AS proto,
+                        SUM(bytes) AS total_bytes,
+                        count() AS flow_count
+                    FROM flows
+                    WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
+                    GROUP BY proto ORDER BY total_bytes DESC
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
@@ -170,20 +188,25 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             }).then(r => r.json()),
         ]);
 
+        // Enrich port breakdown with app names
+        const { getAppName } = await import('@/lib/protocols');
+        const portBreakdownEnriched = (portBreakdownRows as any[]).map(r => ({
+            ...r,
+            app_name: getAppName(Number(r.port)),
+        }));
+
         const user = await getCurrentUser();
         if (!user) {
             topPeersAsSrcRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
             topPeersAsDstRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
             recentFlowsRows.forEach((r: any) => {
-                r.timestamp = r.last_flow_time; // Re-assign for the UI
+                r.timestamp = r.last_flow_time;
                 r.src_ip = obfuscateIp(r.src_ip);
                 r.dst_ip = obfuscateIp(r.dst_ip);
             });
         } else {
             await applyAliases(topPeersAsSrcRows);
             await applyAliases(topPeersAsDstRows);
-
-            // Re-assign for the UI even if logged in
             recentFlowsRows.forEach((r: any) => { r.timestamp = r.last_flow_time; });
             await applyAliases(recentFlowsRows);
         }
@@ -197,7 +220,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
                 timelineAsDst: timelineAsDstRows,
                 topPeersAsSrc: topPeersAsSrcRows,
                 topPeersAsDst: topPeersAsDstRows,
-                topPorts: topPortsRows,
+                portBreakdown: portBreakdownEnriched,
+                protocolBreakdown: protocolBreakdownRows,
                 recentFlows: recentFlowsRows,
             }
         });
