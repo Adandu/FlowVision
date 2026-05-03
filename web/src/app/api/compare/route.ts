@@ -106,6 +106,13 @@ export async function GET(request: Request) {
     buildProtocolFilter(protocol)
   );
 
+  if (!safeDate(fromA) || !safeDate(toA) || !safeDate(fromB) || !safeDate(toB)) {
+    return NextResponse.json(
+      { error: 'fromA, toA, fromB, toB are all required and must be valid datetime values (YYYY-MM-DDTHH:mm)' },
+      { status: 400 }
+    );
+  }
+
   const timeFilterA = buildCustomTimeFilter(fromA, toA);
   const timeFilterB = buildCustomTimeFilter(fromB, toB);
 

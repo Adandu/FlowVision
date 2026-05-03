@@ -52,7 +52,8 @@ export async function GET(request: Request) {
   else if (direction === 'inbound') dirFilter = `NOT ${privSrc} AND ${privDst}`;
   else if (direction === 'internal') dirFilter = `${privSrc} AND ${privDst}`;
 
-  const fullWhere = combineFilters(whereClause, dirFilter, minBytes > 0 ? `bytes >= ${minBytes}` : '');
+  const fullWhere = combineFilters(whereClause, dirFilter);
+  const havingClause = minBytes > 0 ? `HAVING SUM(bytes) >= ${minBytes}` : '';
 
   try {
     const rows = await clickhouse.query({
@@ -69,6 +70,7 @@ export async function GET(request: Request) {
           WHERE ${fullWhere}
         )
         GROUP BY src_ip, dst_ip, src_port, dst_port, protocol
+        ${havingClause}
         ORDER BY timestamp DESC
         LIMIT ${limit}
       `,

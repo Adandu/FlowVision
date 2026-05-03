@@ -143,6 +143,10 @@ export async function GET(request: Request) {
 
     // Always measure bps from the last 3 minutes regardless of chart interval,
     // so stat cards show current throughput rather than a diluted interval average.
+    // Apply active IP/port/proto filters so stat cards reflect the current filter context.
+    const trafficDirectionWhere = extraFilters === '1=1'
+      ? 'timestamp >= now() - INTERVAL 3 MINUTE'
+      : `timestamp >= now() - INTERVAL 3 MINUTE AND ${extraFilters}`;
     const trafficDirectionQuery = `
           SELECT
             sumIf(bytes, ${privateSrc} AND NOT ${privateDst}) AS outbound_bytes,
@@ -153,7 +157,7 @@ export async function GET(request: Request) {
             round(inbound_bytes * 8 / 180, 2) AS inbound_bps,
             round(internal_bytes * 8 / 180, 2) AS internal_bps,
             round(total_bytes * 8 / 180, 2) AS total_bps
-          FROM flows WHERE timestamp >= now() - INTERVAL 3 MINUTE`;
+          FROM flows WHERE ${trafficDirectionWhere}`;
 
     const geoMapDataQuery = `
           SELECT ip, sum(total_bytes) as total_bytes FROM (

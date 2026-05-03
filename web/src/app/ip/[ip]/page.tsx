@@ -93,7 +93,7 @@ function IPDetailContent() {
             if (timer) clearInterval(timer);
         };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ip, interval]);
+    }, [ip, interval, filterRest.from, filterRest.to]);
 
     async function handleExport() {
         setExporting(true);
@@ -223,7 +223,7 @@ function IPDetailContent() {
                                                 <td className="text-right py-2 text-gray-400">{Number(r.flow_count).toLocaleString()}</td>
                                                 <td className="py-2 pl-2">
                                                     <Link
-                                                        href={`${flowLogBase}?interval=${interval}&src=${ip}&proto=${r.proto.toLowerCase()}`}
+                                                        href={flowLogForIp(`&proto=${r.proto.toLowerCase()}`)}
                                                         className="text-blue-400 hover:text-blue-300 text-xs"
                                                         title="View flows"
                                                     >→</Link>
@@ -265,7 +265,7 @@ function IPDetailContent() {
                                                     <td className="text-right py-2 text-gray-400">{Number(r.flow_count).toLocaleString()}</td>
                                                     <td className="py-2 pl-2">
                                                         <Link
-                                                            href={`${flowLogBase}?interval=${interval}&src=${ip}&port=${r.port}`}
+                                                            href={flowLogForIp(`&port=${r.port}`)}
                                                             className="text-blue-400 hover:text-blue-300 text-xs"
                                                             title="View flows"
                                                         >→</Link>

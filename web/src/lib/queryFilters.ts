@@ -25,6 +25,7 @@ export function buildTimeFilter(params: Pick<FilterParams, 'interval' | 'from' |
   switch (interval) {
     case '1m':
     case 'Live': return 'timestamp >= now() - INTERVAL 1 MINUTE';
+    case '5m': return 'timestamp >= now() - INTERVAL 5 MINUTE';
     case '10m': return 'timestamp >= now() - INTERVAL 10 MINUTE';
     case '24h': return 'timestamp >= now() - INTERVAL 24 HOUR';
     case '1w': return 'timestamp >= now() - INTERVAL 1 WEEK';
