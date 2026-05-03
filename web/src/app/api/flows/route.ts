@@ -2,23 +2,28 @@ import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
 import { getCurrentUser, obfuscateIp } from '@/lib/auth';
+import { buildTimeFilter, buildIpFilter, buildProtocolFilter, buildPortFilter, combineFilters } from '@/lib/queryFilters';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const interval = searchParams.get('interval') || '1h';
+  const from = searchParams.get('from') || '';
+  const to = searchParams.get('to') || '';
+  const srcIp = searchParams.get('src') || '';
+  const dstIp = searchParams.get('dst') || '';
+  const port = searchParams.get('port') || '';
+  const protocol = searchParams.get('proto') || '';
 
-  let timeFilter = '';
-  let intervalSeconds = 3600;
-  switch (interval) {
-    case '1m': timeFilter = 'timestamp >= now() - INTERVAL 1 MINUTE'; intervalSeconds = 60; break;
-    case '5m': timeFilter = 'timestamp >= now() - INTERVAL 5 MINUTE'; intervalSeconds = 300; break;
-    case '10m': timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE'; intervalSeconds = 600; break;
-    case '1h': timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; intervalSeconds = 3600; break;
-    case '24h': timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR'; intervalSeconds = 86400; break;
-    case '1w': timeFilter = 'timestamp >= now() - INTERVAL 1 WEEK'; intervalSeconds = 604800; break;
-    case '1mo': timeFilter = 'timestamp >= now() - INTERVAL 1 MONTH'; intervalSeconds = 2592000; break;
-    default: timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; intervalSeconds = 3600;
-  }
+  const timeFilter = buildTimeFilter({ interval, from, to });
+  const extraFilters = combineFilters(
+    buildIpFilter('src_ip', srcIp),
+    buildIpFilter('dst_ip', dstIp),
+    buildPortFilter(port),
+    buildProtocolFilter(protocol)
+  );
+  const whereClause = extraFilters === '1=1'
+    ? timeFilter
+    : `${timeFilter} AND ${extraFilters}`;
 
   const privateSrc = `(
         match(src_ip, '^10\\\\.') OR match(src_ip, '^192\\\\.168\\\\.') OR match(src_ip, '^172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.')
@@ -88,26 +93,26 @@ export async function GET(request: Request) {
 
     const topDestinationsQuery = `
           SELECT dst_ip AS ip, SUM(bytes) as total_bytes
-          FROM flows WHERE ${timeFilter}
+          FROM flows WHERE ${whereClause}
           GROUP BY ip ORDER BY total_bytes DESC LIMIT ${limit}`;
 
     const topSourcesQuery = `
           SELECT src_ip AS ip, SUM(bytes) as total_bytes
-          FROM flows WHERE ${timeFilter}
+          FROM flows WHERE ${whereClause}
           GROUP BY ip ORDER BY total_bytes DESC LIMIT ${limit}`;
 
     const topPortsQuery = `
           SELECT
             multiIf(protocol = 6, concat('TCP ', toString(dst_port)), protocol = 17, concat('UDP ', toString(dst_port)), protocol = 1, concat('ICMP ', toString(dst_port)), concat('Other ', toString(dst_port))) AS port,
             SUM(bytes) as total_bytes
-          FROM flows WHERE ${timeFilter}
+          FROM flows WHERE ${whereClause}
           GROUP BY port ORDER BY total_bytes DESC LIMIT ${limit}`;
 
     const protocolBreakdownQuery = `
           SELECT
             multiIf(protocol = 6, 'TCP', protocol = 17, 'UDP', protocol = 1, 'ICMP', 'Other') AS proto,
             SUM(bytes) AS total_bytes
-          FROM flows WHERE ${timeFilter}
+          FROM flows WHERE ${whereClause}
           GROUP BY proto ORDER BY total_bytes DESC`;
 
     // Always measure bps from the last 3 minutes regardless of chart interval,
@@ -126,9 +131,9 @@ export async function GET(request: Request) {
 
     const geoMapDataQuery = `
           SELECT ip, sum(total_bytes) as total_bytes FROM (
-              SELECT dst_ip AS ip, SUM(bytes) as total_bytes FROM flows WHERE ${timeFilter} GROUP BY ip
+              SELECT dst_ip AS ip, SUM(bytes) as total_bytes FROM flows WHERE ${whereClause} GROUP BY ip
               UNION ALL
-              SELECT src_ip AS ip, SUM(bytes) as total_bytes FROM flows WHERE ${timeFilter} GROUP BY ip
+              SELECT src_ip AS ip, SUM(bytes) as total_bytes FROM flows WHERE ${whereClause} GROUP BY ip
           ) GROUP BY ip ORDER BY total_bytes DESC LIMIT 100`;
 
     // Separate query for Applications widget: top 100 public IPs only so internal
@@ -138,20 +143,20 @@ export async function GET(request: Request) {
     const topPublicIpsQuery = `
           SELECT ip, sum(total_bytes) as total_bytes FROM (
               SELECT dst_ip AS ip, SUM(bytes) as total_bytes FROM flows
-              WHERE ${timeFilter} AND NOT match(dst_ip, ${privatePattern}) GROUP BY ip
+              WHERE ${whereClause} AND NOT match(dst_ip, ${privatePattern}) GROUP BY ip
               UNION ALL
               SELECT src_ip AS ip, SUM(bytes) as total_bytes FROM flows
-              WHERE ${timeFilter} AND NOT match(src_ip, ${privatePattern}) GROUP BY ip
+              WHERE ${whereClause} AND NOT match(src_ip, ${privatePattern}) GROUP BY ip
           ) GROUP BY ip ORDER BY total_bytes DESC LIMIT 100`;
 
     const activeCountsQuery = `
           SELECT
             uniqExact(ip) AS active_ips_distinct,
-            (SELECT uniqExact(toString(dst_port)) FROM flows WHERE ${timeFilter}) AS active_ports
+            (SELECT uniqExact(toString(dst_port)) FROM flows WHERE ${whereClause}) AS active_ports
           FROM (
-            SELECT src_ip AS ip FROM flows WHERE ${timeFilter}
+            SELECT src_ip AS ip FROM flows WHERE ${whereClause}
             UNION ALL
-            SELECT dst_ip AS ip FROM flows WHERE ${timeFilter}
+            SELECT dst_ip AS ip FROM flows WHERE ${whereClause}
           )`;
 
     const [timeSeries, topDestinations, topSources, topPortsRaw, protocolBreakdown, trafficDirection, geoMapRaw, activeCounts, topPublicIpsRaw] = await Promise.all([
