@@ -2,14 +2,7 @@
 
 import ReactECharts from 'echarts-for-react';
 import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chartConstants';
-
-function formatBytes(bytes: number) {
-    if (!bytes) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
+import { formatBytes } from '@/lib/formatters';
 
 // Use asterisks — block chars (████) don't render in ECharts default font
 const mask = (i: number) => '*'.repeat(5 + (i % 3)); // *****  ******  *******  cycling

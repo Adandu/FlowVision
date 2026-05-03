@@ -2,21 +2,13 @@
 
 import ReactECharts from 'echarts-for-react';
 import * as echarts from 'echarts/core';
+import { formatBits } from '@/lib/formatters';
 
 interface Props {
     data: { time: string; total_bytes: number; bits_per_second?: number }[];
     timezone?: string;
     tzOffsetMinutes?: number;
     interval?: string;
-}
-
-function formatBits(bitsPerSecond: number) {
-    if (!bitsPerSecond || bitsPerSecond <= 0) return '0 bps';
-    const k = 1000;
-    const sizes = ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
-    const i = Math.max(0, Math.floor(Math.log(bitsPerSecond) / Math.log(k)));
-    const validIndex = Math.min(i, sizes.length - 1);
-    return parseFloat((bitsPerSecond / Math.pow(k, validIndex)).toFixed(2)) + ' ' + sizes[validIndex];
 }
 
 export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes = 0, interval }: Props) {
@@ -39,8 +31,10 @@ export default function BandwidthChart({ data, timezone = 'UTC', tzOffsetMinutes
             case '10m': min = now - 10 * 60 * 1000; break;
             case '1h': min = now - 60 * 60 * 1000; break;
             case '24h': min = now - 24 * 60 * 60 * 1000; break;
-            case '1w': min = now - 7 * 24 * 60 * 60 * 1000; break;
-            case '1mo': min = now - 30 * 24 * 60 * 60 * 1000; break;
+            case '1w':
+            case '7d': min = now - 7 * 24 * 60 * 60 * 1000; break;
+            case '1mo':
+            case '30d': min = now - 30 * 24 * 60 * 60 * 1000; break;
         }
     }
 

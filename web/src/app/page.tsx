@@ -8,6 +8,7 @@ import { Activity, Globe, Clock, Server, ArrowRightLeft, ArrowUpRight, ArrowDown
 import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/Navbar';
 import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
+import { formatBytes, formatBits } from '@/lib/formatters';
 
 const BandwidthChart = dynamic(() => import('@/components/charts/BandwidthChart'), { ssr: false });
 const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
@@ -230,23 +231,3 @@ function StatCard({ title, value, icon, color, span = 1, href }: { title: string
   ) : content;
 }
 
-function formatBytes(bytes: number, decimals = 2) {
-  if (!+bytes) return '0 B';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}
-
-function formatBits(bitsPerSecond: number, decimals = 2) {
-  if (!+bitsPerSecond) return '0 bps';
-
-  const k = 1000;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['bps', 'Kbps', 'Mbps', 'Gbps', 'Tbps'];
-
-  const i = Math.floor(Math.log(bitsPerSecond) / Math.log(k));
-
-  return `${parseFloat((bitsPerSecond / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}

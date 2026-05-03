@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle } from 'lucide-react';
 import Navbar from '@/components/Navbar';
-import { useTimezone, formatTimestamp } from '@/lib/timezone';
+import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
 import { useAuth } from '@/hooks/useAuth';
+import { formatBytes } from '@/lib/formatters';
 
 const BandwidthChart = dynamic(() => import('@/components/charts/BandwidthChart'), { ssr: false });
 const TopHostsChart = dynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
@@ -20,16 +21,9 @@ const AISummaryWidget = dynamic(() => import('@/components/AISummaryWidget'), { 
 
 type IntervalType = '10m' | '1h' | '24h' | '7d' | '30d';
 
-function formatBytes(bytes: number) {
-    if (!bytes || isNaN(bytes)) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(Math.max(1, bytes)) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
 export default function IPDetailPage() {
     const params = useParams();
+    const router = useRouter();
     const ip = decodeURIComponent(params.ip as string);
     const { timezone } = useTimezone();
     const [interval, setIntervalState] = useState<IntervalType | 'Live'>('24h');
@@ -104,7 +98,7 @@ export default function IPDetailPage() {
     return (
         <div className="min-h-screen bg-gray-950 pb-12">
             <Navbar />
-            <main className="w-full px-4 sm:px-6 lg:px-8 mt-8 space-y-6">
+            <main className="w-full px-4 sm:px-6 lg:px-8 2xl:px-12 mt-8 space-y-6">
 
                 {/* Header Area */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -126,16 +120,14 @@ export default function IPDetailPage() {
                     </div>
 
                     {/* Time Interval Selector */}
-                    <div className="flex items-center space-x-2 bg-gray-900/50 p-1.5 rounded-lg border border-gray-800 backdrop-blur-sm self-start md:self-auto">
+                    <div className="flex space-x-2 self-start md:self-auto">
                         {intervals.map((int) => (
                             <button
                                 key={int.value}
                                 onClick={() => setIntervalState(int.value)}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${interval === int.value
-                                    ? int.value === 'Live'
-                                        ? 'bg-red-500 text-white shadow-lg shadow-red-500/20 animate-pulse'
-                                        : 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
-                                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+                                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${interval === int.value
+                                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-transparent'
                                     }`}
                             >
                                 {int.label}
@@ -153,49 +145,49 @@ export default function IPDetailPage() {
                     <>
                         {/* Summary Block */}
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                            <div className="col-span-2 bg-blue-500/5 border border-blue-500/20 rounded-xl p-4">
+                            <div className="col-span-2 bg-blue-500/5 border border-blue-500/20 rounded-xl p-5">
                                 <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><ArrowUpRight className="w-3 h-3" />Bytes Sent</p>
-                                <p className="text-xl font-bold text-gray-100">{formatBytes(Number(summary.bytes_sent))}</p>
+                                <p className="text-2xl font-bold text-gray-100">{formatBytes(Number(summary.bytes_sent))}</p>
                             </div>
-                            <div className="col-span-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4">
+                            <div className="col-span-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-5">
                                 <p className="text-xs text-gray-400 mb-1 flex items-center gap-1"><ArrowDownLeft className="w-3 h-3" />Bytes Received</p>
-                                <p className="text-xl font-bold text-gray-100">{formatBytes(Number(summary.bytes_received))}</p>
+                                <p className="text-2xl font-bold text-gray-100">{formatBytes(Number(summary.bytes_received))}</p>
                             </div>
-                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
+                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-5">
                                 <p className="text-xs text-gray-400 mb-1">Total Flows</p>
-                                <p className="text-xl font-bold text-gray-100">{(Number(summary.flows_as_src) + Number(summary.flows_as_dst)).toLocaleString()}</p>
+                                <p className="text-2xl font-bold text-gray-100">{(Number(summary.flows_as_src) + Number(summary.flows_as_dst)).toLocaleString()}</p>
                             </div>
-                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
+                            <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-5">
                                 <p className="text-xs text-gray-400 mb-1">Last Seen</p>
-                                <p className="text-sm font-medium text-gray-200">{summary.last_seen ? formatTimestamp(summary.last_seen, timezone) : 'Unknown'}</p>
+                                <p className="text-2xl font-bold text-gray-100">{summary.last_seen ? formatTimestamp(summary.last_seen, timezone) : 'Unknown'}</p>
                             </div>
                         </div>
 
                         {/* 1. Traffic Charts */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                                <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                     <ArrowUpRight className="w-4 h-4 text-blue-400" /> Outgoing Traffic Bandwidth
-                                </h3>
+                                </h2>
                                 {data.timelineAsSrc?.length > 0
-                                    ? <BandwidthChart data={data.timelineAsSrc.map((d: any) => ({ time: d.time, total_bytes: d.bytes, bits_per_second: d.bits_per_second ?? 0 }))} timezone={timezone} interval={interval} />
+                                    ? <BandwidthChart data={data.timelineAsSrc.map((d: any) => ({ time: d.time, total_bytes: d.bytes, bits_per_second: d.bits_per_second ?? 0 }))} timezone={timezone} tzOffsetMinutes={getTimezoneOffsetMinutes(timezone)} interval={interval} />
                                     : <p className="text-gray-500 text-sm text-center py-8">No outgoing traffic in interval</p>}
                             </div>
                             <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                                <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                     <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> Incoming Traffic Bandwidth
-                                </h3>
+                                </h2>
                                 {data.timelineAsDst?.length > 0
-                                    ? <BandwidthChart data={data.timelineAsDst.map((d: any) => ({ time: d.time, total_bytes: d.bytes, bits_per_second: d.bits_per_second ?? 0 }))} timezone={timezone} interval={interval} />
+                                    ? <BandwidthChart data={data.timelineAsDst.map((d: any) => ({ time: d.time, total_bytes: d.bytes, bits_per_second: d.bits_per_second ?? 0 }))} timezone={timezone} tzOffsetMinutes={getTimezoneOffsetMinutes(timezone)} interval={interval} />
                                     : <p className="text-gray-500 text-sm text-center py-8">No incoming traffic in interval</p>}
                             </div>
                         </div>
 
                         {/* 2. Flow Diagram */}
                         <div className="bg-gray-900/50 border border-gray-800 rounded-xl px-6 pt-6 pb-2 shadow-xl overflow-hidden">
-                            <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                            <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                 <Network className="w-4 h-4 text-blue-400" /> Traffic Flow Diagram (Sankey Graph)
-                            </h3>
+                            </h2>
                             <div className="w-full -mt-4">
                                 <FlowDiagramChart srcIp={ip} data={flowDiagram || []} />
                             </div>
@@ -210,6 +202,7 @@ export default function IPDetailPage() {
                                         ...donuts.incoming.map((d: any) => ({ ip: d.src_ip, lat: d.lat, lon: d.lon, total_bytes: d.bytes, country: d.country, city: d.city })),
                                         ...donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, lat: d.lat, lon: d.lon, total_bytes: d.bytes, country: d.country, city: d.city }))
                                     ].filter(d => d.lat && d.lon)}
+                                    onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)}
                                 />
                             </div>
                         )}
@@ -218,29 +211,29 @@ export default function IPDetailPage() {
                         {donuts && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                    <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                                    <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                         <ArrowUpRight className="w-4 h-4 text-blue-400" /> All Outgoing
-                                    </h3>
+                                    </h2>
                                     <div className="h-64">
                                         {donuts.outgoing?.length > 0 ? (
-                                            <TopHostsChart data={donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes }))} title="Outgoing" />
+                                            <TopHostsChart data={donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes }))} title="Outgoing" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                    <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                                    <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                         <ArrowDownLeft className="w-4 h-4 text-emerald-400" /> All Incoming
-                                    </h3>
+                                    </h2>
                                     <div className="h-64">
                                         {donuts.incoming?.length > 0 ? (
-                                            <TopHostsChart data={donuts.incoming.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes }))} title="Incoming" />
+                                            <TopHostsChart data={donuts.incoming.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes }))} title="Incoming" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
                                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
-                                    <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                                    <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                         <Activity className="w-4 h-4 text-purple-400" /> All Services
-                                    </h3>
+                                    </h2>
                                     <div className="h-64">
                                         {donuts.topPorts?.length > 0 ? (
                                             <TopPortsChart data={donuts.topPorts.map((d: any) => ({ port: d.dst_port, total_bytes: d.bytes }))} isGuest={isLoggedIn === false} />
@@ -254,9 +247,9 @@ export default function IPDetailPage() {
                                         <TopServicesCard data={donuts.topServices} title="All Applications" isGuest={isLoggedIn === false} />
                                     ) : (
                                         <>
-                                            <h3 className="text-base font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                                            <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
                                                 <Activity className="w-4 h-4 text-emerald-400" /> All Applications
-                                            </h3>
+                                            </h2>
                                             <div className="flex-1 flex items-center justify-center">
                                                 <p className="text-gray-500 text-sm text-center">No application data detected</p>
                                             </div>
@@ -267,8 +260,10 @@ export default function IPDetailPage() {
                         )}
 
                         {/* 5. Recent Flows Table — no overlay so IPs remain clickable */}
-                        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4 shadow-xl">
-                            <h3 className="text-base font-semibold text-gray-200 mb-4 px-2">Flow Log Table</h3>
+                        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 shadow-xl">
+                            <h2 className="text-lg font-semibold text-gray-200 mb-4 flex items-center gap-2">
+                                <Activity className="w-5 h-5 text-gray-400" /> Recent Flows
+                            </h2>
                             <FlowTable flows={data.recentFlows || []} isGuest={isLoggedIn === false} showNetworkDirection />
                         </div>
                     </>
