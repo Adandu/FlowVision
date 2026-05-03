@@ -216,7 +216,7 @@ export default function IPDetailPage() {
                                     </h2>
                                     <div className="h-64">
                                         {donuts.outgoing?.length > 0 ? (
-                                            <TopHostsChart data={donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes }))} title="Outgoing" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
+                                            <TopHostsChart data={donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes, displayName: d.dst_displayName }))} title="Outgoing" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
@@ -226,7 +226,7 @@ export default function IPDetailPage() {
                                     </h2>
                                     <div className="h-64">
                                         {donuts.incoming?.length > 0 ? (
-                                            <TopHostsChart data={donuts.incoming.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes }))} title="Incoming" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
+                                            <TopHostsChart data={donuts.incoming.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes, displayName: d.src_displayName }))} title="Incoming" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>
@@ -236,7 +236,7 @@ export default function IPDetailPage() {
                                     </h2>
                                     <div className="h-64">
                                         {donuts.topPorts?.length > 0 ? (
-                                            <TopPortsChart data={donuts.topPorts.map((d: any) => ({ port: d.dst_port, total_bytes: d.bytes }))} isGuest={isLoggedIn === false} />
+                                            <TopPortsChart data={donuts.topPorts} isGuest={isLoggedIn === false} />
                                         ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                     </div>
                                 </div>

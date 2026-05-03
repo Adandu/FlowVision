@@ -55,11 +55,26 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             ORDER BY bytes DESC
             LIMIT 10
         `;
-        const topPorts = await clickhouse.query({
+        const topPortsRaw = await clickhouse.query({
             query: portsQuery,
             query_params: { ip },
             format: 'JSONEachRow'
         }).then(r => r.json());
+
+        // Convert raw port+protocol into named service strings (same as dashboard)
+        const { getAppName } = await import('@/lib/protocols');
+        const portAppMap = new Map<string, number>();
+        for (const p of topPortsRaw as any[]) {
+            const portNum = Number(p.dst_port);
+            const proto = p.protocol === 6 ? 'TCP' : p.protocol === 17 ? 'UDP' : p.protocol === 1 ? 'ICMP' : 'Other';
+            const appName = getAppName(portNum);
+            const label = appName.startsWith('Port ') ? `${proto} ${portNum}` : appName;
+            portAppMap.set(label, (portAppMap.get(label) || 0) + Number(p.bytes));
+        }
+        const topPorts = Array.from(portAppMap.entries())
+            .map(([port, total_bytes]) => ({ port, total_bytes }))
+            .sort((a, b) => b.total_bytes - a.total_bytes)
+            .slice(0, 10);
 
         const user = await getCurrentUser();
 
@@ -112,15 +127,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
 
         // If no public peers were identified via ASN, fall back to L7 port-based app names
         if (serviceMap.size === 0) {
-            const { getAppName } = await import('@/lib/protocols');
-            for (const p of topPorts as any[]) {
-                const portNum = Number(p.dst_port);
-                const proto = p.protocol === 6 ? 'TCP' : p.protocol === 17 ? 'UDP' : p.protocol === 1 ? 'ICMP' : 'Other';
-                const appName = getAppName(portNum);
-                const label = appName.startsWith('Port ') ? `${proto} ${portNum}` : appName;
-                const current = serviceMap.get(label) || { total_bytes: 0, color: asnColor(label) };
-                current.total_bytes += Number(p.bytes);
-                serviceMap.set(label, current);
+            for (const p of topPorts) {
+                const current = serviceMap.get(p.port) || { total_bytes: 0, color: asnColor(p.port) };
+                current.total_bytes += p.total_bytes;
+                serviceMap.set(p.port, current);
             }
         }
 
