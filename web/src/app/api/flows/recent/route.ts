@@ -13,13 +13,26 @@ export async function GET(request: Request) {
   const to = searchParams.get('to') || '';
   const srcIp = searchParams.get('src') || '';
   const dstIp = searchParams.get('dst') || '';
+  const eitherIp = searchParams.get('ip') || ''; // matches src OR dst
   const port = searchParams.get('port') || '';
   const protocol = searchParams.get('proto') || '';
   const direction = searchParams.get('direction') || '';
   const minBytes = parseInt(searchParams.get('minBytes') || '0', 10) || 0;
 
   const timeFilter = buildTimeFilter({ interval, from, to });
+
+  // Build ip filter — `ip` param matches either direction, `src`/`dst` are directional
+  let ipFilter = '';
+  if (eitherIp) {
+    const ipExact = eitherIp.trim();
+    // simple IP validation reuse from queryFilters logic
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ipExact)) {
+      ipFilter = `(src_ip = '${ipExact}' OR dst_ip = '${ipExact}')`;
+    }
+  }
+
   const extraFilters = combineFilters(
+    ipFilter,
     buildIpFilter('src_ip', srcIp),
     buildIpFilter('dst_ip', dstIp),
     buildPortFilter(port),

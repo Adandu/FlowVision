@@ -3,12 +3,20 @@ import { clickhouse } from '@/lib/clickhouse';
 import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 import { buildIpFilter, buildProtocolFilter, buildPortFilter, combineFilters } from '@/lib/queryFilters';
 
+// Only allow datetime-local format (YYYY-MM-DDTHH:mm or YYYY-MM-DD HH:mm:ss)
+const DATETIME_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?$/;
+
+function safeDate(v: string): string | null {
+  const t = v.trim();
+  return DATETIME_RE.test(t) ? t : null;
+}
+
 function buildCustomTimeFilter(from: string, to: string): string {
-  if (from && to) {
-    return `timestamp >= parseDateTimeBestEffort('${from}') AND timestamp <= parseDateTimeBestEffort('${to}')`;
-  }
-  if (from) return `timestamp >= parseDateTimeBestEffort('${from}')`;
-  if (to) return `timestamp <= parseDateTimeBestEffort('${to}')`;
+  const f = safeDate(from);
+  const t = safeDate(to);
+  if (f && t) return `timestamp >= parseDateTimeBestEffort('${f}') AND timestamp <= parseDateTimeBestEffort('${t}')`;
+  if (f) return `timestamp >= parseDateTimeBestEffort('${f}')`;
+  if (t) return `timestamp <= parseDateTimeBestEffort('${t}')`;
   return '1=1';
 }
 

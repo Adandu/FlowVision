@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { Suspense, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { List, Download } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import nextDynamic from 'next/dynamic';
@@ -36,6 +37,8 @@ function FlowLogContent() {
   const [exporting, setExporting] = useState(false);
   const isLoggedIn = useAuth();
   const { interval, toApiParams, activeCount, ...filterRest } = useFilters('1h');
+  const searchParams = useSearchParams();
+  const eitherIp = searchParams.get('ip') || ''; // set when navigating from IP detail
 
   useEffect(() => {
     setLoading(true);
@@ -43,13 +46,14 @@ function FlowLogContent() {
     const params = new URLSearchParams({ ...apiParams, limit });
     if (direction) params.set('direction', direction);
     if (minBytes !== '0') params.set('minBytes', minBytes);
+    if (eitherIp) params.set('ip', eitherIp);
 
     fetch(`/api/flows/recent?${params}`)
       .then(r => r.json())
       .then(j => { if (j.success) setFlows(j.data); })
       .finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interval, filterRest.srcIp, filterRest.dstIp, filterRest.port, filterRest.protocol, filterRest.from, filterRest.to, limit, direction, minBytes]);
+  }, [interval, filterRest.srcIp, filterRest.dstIp, filterRest.port, filterRest.protocol, filterRest.from, filterRest.to, limit, direction, minBytes, eitherIp]);
 
   async function handleExport() {
     setExporting(true);
@@ -58,6 +62,7 @@ function FlowLogContent() {
       const params = new URLSearchParams({ ...apiParams, limit: '10000' });
       if (direction) params.set('direction', direction);
       if (minBytes !== '0') params.set('minBytes', minBytes);
+      if (eitherIp) params.set('ip', eitherIp);
       const res = await fetch(`/api/flows/export?${params}`);
       if (!res.ok) return;
       const blob = await res.blob();

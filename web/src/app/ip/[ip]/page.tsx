@@ -49,11 +49,16 @@ function IPDetailContent() {
         async function fetchAll() {
             setLoading(true);
             const queryInterval = interval === 'Live' ? '1m' : interval;
+            const timeParams = new URLSearchParams({ interval: queryInterval });
+            if (interval === 'custom') {
+                if (filterRest.from) timeParams.set('from', filterRest.from);
+                if (filterRest.to) timeParams.set('to', filterRest.to);
+            }
             try {
                 const [ipData, donutsData, diagramData, geoData, rdnsData] = await Promise.all([
-                    fetch(`/api/ip/${ip}?interval=${queryInterval}`).then(r => r.json()),
-                    fetch(`/api/ip/${ip}/donuts?interval=${queryInterval}`).then(r => r.json()),
-                    fetch(`/api/flow-diagram?src_ip=${ip}&interval=${queryInterval}`).then(r => r.json()),
+                    fetch(`/api/ip/${ip}?${timeParams}`).then(r => r.json()),
+                    fetch(`/api/ip/${ip}/donuts?${timeParams}`).then(r => r.json()),
+                    fetch(`/api/flow-diagram?src_ip=${ip}&${timeParams}`).then(r => r.json()),
                     fetch(`/api/geoip/${ip}`).then(r => r.json()),
                     fetch(`/api/rdns/${ip}`).then(r => r.json()),
                 ]);
@@ -94,7 +99,12 @@ function IPDetailContent() {
         setExporting(true);
         try {
             const queryInterval = interval === 'Live' ? '1m' : interval;
-            const res = await fetch(`/api/ip/${ip}/export?interval=${queryInterval}`);
+            const exportParams = new URLSearchParams({ interval: queryInterval });
+            if (interval === 'custom') {
+                if (filterRest.from) exportParams.set('from', filterRest.from);
+                if (filterRest.to) exportParams.set('to', filterRest.to);
+            }
+            const res = await fetch(`/api/ip/${ip}/export?${exportParams}`);
             if (!res.ok) return;
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
@@ -111,8 +121,9 @@ function IPDetailContent() {
     const summary = data?.summary || {};
 
     const flowLogBase = `/flow-log`;
+    // Use `ip=` so the flow log shows traffic both TO and FROM this IP
     const flowLogForIp = (extraParam: string) =>
-        `${flowLogBase}?interval=${interval}&src=${ip}${extraParam}`;
+        `${flowLogBase}?interval=${interval}&ip=${ip}${extraParam}`;
 
     return (
         <div className="min-h-screen bg-gray-950 pb-12">
@@ -354,7 +365,7 @@ function IPDetailContent() {
                             icon={<Activity className="w-5 h-5 text-gray-400" />}
                             headerRight={
                                 <Link
-                                    href={`${flowLogBase}?interval=${interval}&src=${ip}`}
+                                    href={`${flowLogBase}?interval=${interval}&ip=${ip}`}
                                     className="text-sm text-blue-400 hover:text-blue-300 hover:underline"
                                 >
                                     View all in Flow Log →

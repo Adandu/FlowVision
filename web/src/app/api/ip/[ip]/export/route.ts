@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
 import { getCurrentUser } from '@/lib/auth';
+import { buildTimeFilter } from '@/lib/queryFilters';
 
 export async function GET(req: Request, { params }: { params: Promise<{ ip: string }> }) {
   const user = await getCurrentUser();
@@ -12,19 +13,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
   const { ip } = await params;
   const url = new URL(req.url);
   const interval = url.searchParams.get('interval') || '24h';
+  const from = url.searchParams.get('from') || '';
+  const to = url.searchParams.get('to') || '';
 
-  let timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
-
-  switch (interval) {
-    case '1m':  timeFilter = 'timestamp >= now() - INTERVAL 1 MINUTE'; break;
-    case '10m': timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE'; break;
-    case '1h':  timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR'; break;
-    case '24h': timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR'; break;
-    case '7d':
-    case '1w':  timeFilter = 'timestamp >= now() - INTERVAL 7 DAY'; break;
-    case '30d':
-    case '1mo': timeFilter = 'timestamp >= now() - INTERVAL 30 DAY'; break;
-  }
+  const timeFilter = buildTimeFilter({ interval, from, to });
 
   try {
     const rows = await clickhouse.query({

@@ -32,9 +32,14 @@ export async function GET(request: Request) {
         match(dst_ip, '^10\\\\.') OR match(dst_ip, '^192\\\\.168\\\\.') OR match(dst_ip, '^172\\\\.(1[6-9]|2[0-9]|3[01])\\\\.')
     )`;
 
+  // Pre-aggregated MVs can't be filtered by IP/port/protocol.
+  // When active filters are set or a custom range is selected, fall back to raw flows.
+  const hasExtraFilters = extraFilters !== '1=1';
+  const useRawTable = hasExtraFilters || interval === 'custom';
+
   try {
     let timeSeriesQuery = '';
-    if (interval === '1w' || interval === '1mo' || interval === '24h') {
+    if (!useRawTable && (interval === '1w' || interval === '1mo' || interval === '24h')) {
       timeSeriesQuery = `
               SELECT
                 hour AS time,
@@ -47,7 +52,7 @@ export async function GET(request: Request) {
                 FROM toStartOfHour(now() - INTERVAL ${interval === '24h' ? '24 HOUR' : interval === '1w' ? '1 WEEK' : '1 MONTH'})
                 TO toStartOfHour(now())
                 STEP 3600`;
-    } else if (interval === '10m' || interval === '1h') {
+    } else if (!useRawTable && (interval === '10m' || interval === '1h')) {
       timeSeriesQuery = `
               SELECT
                 minute AS time,
@@ -73,7 +78,7 @@ export async function GET(request: Request) {
                 FROM toStartOfInterval(now() - INTERVAL 5 MINUTE, INTERVAL 5 SECOND)
                 TO toStartOfInterval(now(), INTERVAL 5 SECOND)
                 STEP 5`;
-    } else { // 1s Live Mode Dashboard
+    } else if (!useRawTable) { // 1s Live Mode Dashboard (unfiltered)
       timeSeriesQuery = `
               SELECT
                 toStartOfInterval(timestamp, INTERVAL 1 SECOND) AS time,
@@ -86,6 +91,27 @@ export async function GET(request: Request) {
                 FROM toStartOfInterval(now() - INTERVAL 1 MINUTE, INTERVAL 1 SECOND)
                 TO toStartOfInterval(now(), INTERVAL 1 SECOND)
                 STEP 1`;
+    } else {
+      // Filtered or custom range — query raw flows with full whereClause.
+      // Pick bucket size based on interval (or default 1h for custom).
+      const bucketCfg: Record<string, { fn: string; step: number; bps: string }> = {
+        '1m':     { fn: 'toStartOfInterval(timestamp, INTERVAL 1 SECOND)', step: 1,    bps: 'total_bytes * 8' },
+        '10m':    { fn: 'toStartOfMinute(timestamp)',                      step: 60,   bps: 'total_bytes * 8 / 60' },
+        '1h':     { fn: 'toStartOfMinute(timestamp)',                      step: 60,   bps: 'total_bytes * 8 / 60' },
+        '24h':    { fn: 'toStartOfHour(timestamp)',                        step: 3600, bps: 'total_bytes * 8 / 3600' },
+        '1w':     { fn: 'toStartOfHour(timestamp)',                        step: 3600, bps: 'total_bytes * 8 / 3600' },
+        '1mo':    { fn: 'toStartOfDay(timestamp)',                         step: 86400,bps: 'total_bytes * 8 / 86400' },
+        'custom': { fn: 'toStartOfHour(timestamp)',                        step: 3600, bps: 'total_bytes * 8 / 3600' },
+      };
+      const cfg = bucketCfg[interval] || bucketCfg['custom'];
+      timeSeriesQuery = `
+              SELECT
+                ${cfg.fn} AS time,
+                toUInt64(SUM(bytes)) AS total_bytes,
+                round(${cfg.bps}, 2) AS bits_per_second
+              FROM flows
+              WHERE ${whereClause}
+              GROUP BY time ORDER BY time ASC`;
     }
 
     const parsedLimit = parseInt(searchParams.get('limit') || '10', 10);

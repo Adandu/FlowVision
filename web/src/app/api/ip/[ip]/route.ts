@@ -2,50 +2,43 @@ import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
 import { getCurrentUser, obfuscateIp } from '@/lib/auth';
+import { buildTimeFilter } from '@/lib/queryFilters';
 
 export async function GET(req: Request, { params }: { params: Promise<{ ip: string }> }) {
     const { ip } = await params;
     const url = new URL(req.url);
     const interval = url.searchParams.get('interval') || '24h';
+    const from = url.searchParams.get('from') || '';
+    const to = url.searchParams.get('to') || '';
 
-    let timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
+    let timeFilter = buildTimeFilter({ interval, from, to });
     let timeGroup = 'toStartOfHour(timestamp)';
     let fillFrom = 'toStartOfHour(now() - INTERVAL 24 HOUR)';
     let fillTo = 'toStartOfHour(now())';
     let fillStep = '3600';
 
+    // timeFilter is set by buildTimeFilter; only set chart bucketing vars here
     switch (interval) {
         case '1m':
-            timeFilter = 'timestamp >= now() - INTERVAL 1 MINUTE';
             timeGroup = 'toStartOfInterval(timestamp, INTERVAL 1 SECOND)';
             fillFrom = 'toStartOfInterval(now() - INTERVAL 1 MINUTE, INTERVAL 1 SECOND)';
             fillTo = 'toStartOfInterval(now(), INTERVAL 1 SECOND)';
             fillStep = '1';
             break;
         case '10m':
-            timeFilter = 'timestamp >= now() - INTERVAL 10 MINUTE';
             timeGroup = 'toStartOfMinute(timestamp)';
             fillFrom = 'toStartOfMinute(now() - INTERVAL 10 MINUTE)';
             fillTo = 'toStartOfMinute(now())';
             fillStep = '60';
             break;
         case '1h':
-            timeFilter = 'timestamp >= now() - INTERVAL 1 HOUR';
             timeGroup = 'toStartOfMinute(timestamp)';
             fillFrom = 'toStartOfMinute(now() - INTERVAL 1 HOUR)';
             fillTo = 'toStartOfMinute(now())';
             fillStep = '60';
             break;
-        case '24h':
-            timeFilter = 'timestamp >= now() - INTERVAL 24 HOUR';
-            timeGroup = 'toStartOfHour(timestamp)';
-            fillFrom = 'toStartOfHour(now() - INTERVAL 24 HOUR)';
-            fillTo = 'toStartOfHour(now())';
-            fillStep = '3600';
-            break;
         case '7d':
         case '1w':
-            timeFilter = 'timestamp >= now() - INTERVAL 7 DAY';
             timeGroup = 'toStartOfHour(timestamp)';
             fillFrom = 'toStartOfHour(now() - INTERVAL 7 DAY)';
             fillTo = 'toStartOfHour(now())';
@@ -53,12 +46,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             break;
         case '30d':
         case '1mo':
-            timeFilter = 'timestamp >= now() - INTERVAL 30 DAY';
             timeGroup = 'toStartOfDay(timestamp)';
             fillFrom = 'toStartOfDay(now() - INTERVAL 30 DAY)';
             fillTo = 'toStartOfDay(now())';
             fillStep = '86400';
             break;
+        // custom: keep defaults (hourly buckets); WITH FILL is omitted for arbitrary ranges
     }
 
     try {
@@ -96,7 +89,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
                     FROM flows
                     WHERE src_ip = {ip:String} AND ${timeFilter}
                     GROUP BY time ORDER BY time ASC
-                    WITH FILL FROM ${fillFrom} TO ${fillTo} STEP ${fillStep}
+                    ${interval !== 'custom' ? `WITH FILL FROM ${fillFrom} TO ${fillTo} STEP ${fillStep}` : ''}
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
@@ -109,7 +102,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
                     FROM flows
                     WHERE dst_ip = {ip:String} AND ${timeFilter}
                     GROUP BY time ORDER BY time ASC
-                    WITH FILL FROM ${fillFrom} TO ${fillTo} STEP ${fillStep}
+                    ${interval !== 'custom' ? `WITH FILL FROM ${fillFrom} TO ${fillTo} STEP ${fillStep}` : ''}
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
