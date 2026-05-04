@@ -315,13 +315,18 @@ function IPDetailContent() {
                         )}
 
                         {/* Donut Graphs & Services */}
-                        {donuts && (
+                        {donuts && (() => {
+                            const sortedOutgoing = [...(donuts.outgoing || [])].sort((a: any, b: any) => b.bytes - a.bytes);
+                            const sortedIncoming = [...(donuts.incoming || [])].sort((a: any, b: any) => b.bytes - a.bytes);
+                            const sortedPorts = [...(donuts.topPorts || [])].sort((a: any, b: any) => b.total_bytes - a.total_bytes);
+                            const sortedServices = [...(donuts.topServices || [])].sort((a: any, b: any) => b.total_bytes - a.total_bytes);
+                            return (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {/* All Outgoing — paginated */}
                                 <SectionCard title="All Outgoing" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />} className="flex flex-col h-full">
-                                    {donuts.outgoing?.length > 0 ? (() => {
-                                        const totalPages = Math.ceil(donuts.outgoing.length / DONUT_PAGE_SIZE);
-                                        const pageData = donuts.outgoing.slice(outgoingPage * DONUT_PAGE_SIZE, (outgoingPage + 1) * DONUT_PAGE_SIZE);
+                                    {sortedOutgoing.length > 0 ? (() => {
+                                        const totalPages = Math.ceil(sortedOutgoing.length / DONUT_PAGE_SIZE);
+                                        const pageData = sortedOutgoing.slice(outgoingPage * DONUT_PAGE_SIZE, (outgoingPage + 1) * DONUT_PAGE_SIZE);
                                         return (
                                             <>
                                                 <div className="h-64">
@@ -341,9 +346,9 @@ function IPDetailContent() {
 
                                 {/* All Incoming — paginated */}
                                 <SectionCard title="All Incoming" icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />} className="flex flex-col h-full">
-                                    {donuts.incoming?.length > 0 ? (() => {
-                                        const totalPages = Math.ceil(donuts.incoming.length / DONUT_PAGE_SIZE);
-                                        const pageData = donuts.incoming.slice(incomingPage * DONUT_PAGE_SIZE, (incomingPage + 1) * DONUT_PAGE_SIZE);
+                                    {sortedIncoming.length > 0 ? (() => {
+                                        const totalPages = Math.ceil(sortedIncoming.length / DONUT_PAGE_SIZE);
+                                        const pageData = sortedIncoming.slice(incomingPage * DONUT_PAGE_SIZE, (incomingPage + 1) * DONUT_PAGE_SIZE);
                                         return (
                                             <>
                                                 <div className="h-64">
@@ -363,9 +368,9 @@ function IPDetailContent() {
 
                                 {/* All Services — paginated */}
                                 <SectionCard title="All Services" icon={<Activity className="w-4 h-4 text-purple-400" />} className="flex flex-col h-full">
-                                    {donuts.topPorts?.length > 0 ? (() => {
-                                        const totalPages = Math.ceil(donuts.topPorts.length / DONUT_PAGE_SIZE);
-                                        const pageData = donuts.topPorts.slice(servicesPage * DONUT_PAGE_SIZE, (servicesPage + 1) * DONUT_PAGE_SIZE);
+                                    {sortedPorts.length > 0 ? (() => {
+                                        const totalPages = Math.ceil(sortedPorts.length / DONUT_PAGE_SIZE);
+                                        const pageData = sortedPorts.slice(servicesPage * DONUT_PAGE_SIZE, (servicesPage + 1) * DONUT_PAGE_SIZE);
                                         return (
                                             <>
                                                 <div className="h-64">
@@ -385,9 +390,9 @@ function IPDetailContent() {
 
                                 {/* All Applications — paginated */}
                                 <SectionCard className="flex flex-col h-full">
-                                    {donuts.topServices?.length > 0 ? (() => {
-                                        const totalPages = Math.ceil(donuts.topServices.length / DONUT_PAGE_SIZE);
-                                        const pageData = donuts.topServices.slice(applicationsPage * DONUT_PAGE_SIZE, (applicationsPage + 1) * DONUT_PAGE_SIZE);
+                                    {sortedServices.length > 0 ? (() => {
+                                        const totalPages = Math.ceil(sortedServices.length / DONUT_PAGE_SIZE);
+                                        const pageData = sortedServices.slice(applicationsPage * DONUT_PAGE_SIZE, (applicationsPage + 1) * DONUT_PAGE_SIZE);
                                         return (
                                             <>
                                                 <TopServicesCard data={pageData} title="All Applications" isGuest={isLoggedIn === false} />
@@ -403,7 +408,8 @@ function IPDetailContent() {
                                     })() : <TopServicesCard data={[]} title="All Applications" isGuest={isLoggedIn === false} />}
                                 </SectionCard>
                             </div>
-                        )}
+                            );
+                        })()}
 
                         {/* Top Peers */}
                         {(data.topPeersAsSrc?.length > 0 || data.topPeersAsDst?.length > 0) && (
