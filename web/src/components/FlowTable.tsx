@@ -148,14 +148,20 @@ export default function FlowTable({ flows, isGuest = false, highlightIp, showNet
                                     {formatTimestamp(flow.timestamp, timezone)}
                                 </td>
                                 <td className="px-4 py-2.5">
-                                    <Link href={`/ip/${flow.src_ip}`} className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs">
-                                        {flow.src_displayName || flow.src_ip} {!flow.src_displayName && flow.src_asn ? <span className="text-gray-500 font-sans">({flow.src_asn.replace(/^AS\d+\s+/, '')})</span> : ''}
-                                    </Link>
+                                    <div className="flex flex-col gap-0.5">
+                                        <Link href={`/ip/${flow.src_ip}`} className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs">
+                                            {flow.src_displayName || flow.src_ip}
+                                        </Link>
+                                        {flow.src_asn && <span className="text-gray-500 text-xs truncate max-w-[140px]">{flow.src_asn.replace(/^AS\d+\s+/, '')}</span>}
+                                    </div>
                                 </td>
                                 <td className="px-4 py-2.5">
-                                    <Link href={`/ip/${flow.dst_ip}`} className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs">
-                                        {flow.dst_displayName || flow.dst_ip} {!flow.dst_displayName && flow.dst_asn ? <span className="text-gray-500 font-sans">({flow.dst_asn.replace(/^AS\d+\s+/, '')})</span> : ''}
-                                    </Link>
+                                    <div className="flex flex-col gap-0.5">
+                                        <Link href={`/ip/${flow.dst_ip}`} className="text-blue-400 hover:text-blue-300 hover:underline font-mono text-xs">
+                                            {flow.dst_displayName || flow.dst_ip}
+                                        </Link>
+                                        {flow.dst_asn && <span className="text-gray-500 text-xs truncate max-w-[140px]">{flow.dst_asn.replace(/^AS\d+\s+/, '')}</span>}
+                                    </div>
                                 </td>
                                 <td className="px-4 py-2.5">
                                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isGuest ? 'text-gray-400 bg-gray-800' : (PROTOCOL_COLORS[flow.protocol] || PROTOCOL_COLORS.Other)}`}>
