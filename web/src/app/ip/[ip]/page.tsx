@@ -6,7 +6,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
-import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle, Clock, ArrowLeftRight, Download, Server } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle, Clock, ArrowLeftRight, Download, Server, ChevronLeft, ChevronRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import StatCard from '@/components/StatCard';
 import SectionCard from '@/components/SectionCard';
@@ -39,7 +39,15 @@ function IPDetailContent() {
     const [displayIp, setDisplayIp] = useState<string>(ip);
     const [loading, setLoading] = useState(true);
     const [exporting, setExporting] = useState(false);
+    const [outgoingPage, setOutgoingPage] = useState(0);
+    const [incomingPage, setIncomingPage] = useState(0);
+    const DONUT_PAGE_SIZE = 10;
     const isLoggedIn = useAuth();
+
+    useEffect(() => {
+        setOutgoingPage(0);
+        setIncomingPage(0);
+    }, [ip, interval]);
 
     useEffect(() => {
         if (!ip) return;
@@ -305,20 +313,48 @@ function IPDetailContent() {
                         {/* Donut Graphs & Services */}
                         {donuts && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {/* All Outgoing — paginated */}
                                 <SectionCard title="All Outgoing" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />} className="flex flex-col h-full">
-                                    <div className="h-64">
-                                        {donuts.outgoing?.length > 0 ? (
-                                            <TopHostsChart data={donuts.outgoing.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes, displayName: d.dst_displayName }))} title="Outgoing" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
-                                        ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
-                                    </div>
+                                    {donuts.outgoing?.length > 0 ? (() => {
+                                        const totalPages = Math.ceil(donuts.outgoing.length / DONUT_PAGE_SIZE);
+                                        const pageData = donuts.outgoing.slice(outgoingPage * DONUT_PAGE_SIZE, (outgoingPage + 1) * DONUT_PAGE_SIZE);
+                                        return (
+                                            <>
+                                                <div className="h-64">
+                                                    <TopHostsChart data={pageData.map((d: any) => ({ ip: d.dst_ip, total_bytes: d.bytes, displayName: d.dst_displayName }))} title="Outgoing" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
+                                                </div>
+                                                {totalPages > 1 && (
+                                                    <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-800">
+                                                        <button onClick={() => setOutgoingPage(p => Math.max(0, p - 1))} disabled={outgoingPage === 0} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft className="w-4 h-4" /></button>
+                                                        <span className="text-xs text-gray-500">{outgoingPage + 1} / {totalPages}</span>
+                                                        <button onClick={() => setOutgoingPage(p => Math.min(totalPages - 1, p + 1))} disabled={outgoingPage === totalPages - 1} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronRight className="w-4 h-4" /></button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })() : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                 </SectionCard>
 
+                                {/* All Incoming — paginated */}
                                 <SectionCard title="All Incoming" icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />} className="flex flex-col h-full">
-                                    <div className="h-64">
-                                        {donuts.incoming?.length > 0 ? (
-                                            <TopHostsChart data={donuts.incoming.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes, displayName: d.src_displayName }))} title="Incoming" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
-                                        ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
-                                    </div>
+                                    {donuts.incoming?.length > 0 ? (() => {
+                                        const totalPages = Math.ceil(donuts.incoming.length / DONUT_PAGE_SIZE);
+                                        const pageData = donuts.incoming.slice(incomingPage * DONUT_PAGE_SIZE, (incomingPage + 1) * DONUT_PAGE_SIZE);
+                                        return (
+                                            <>
+                                                <div className="h-64">
+                                                    <TopHostsChart data={pageData.map((d: any) => ({ ip: d.src_ip, total_bytes: d.bytes, displayName: d.src_displayName }))} title="Incoming" onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)} />
+                                                </div>
+                                                {totalPages > 1 && (
+                                                    <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-800">
+                                                        <button onClick={() => setIncomingPage(p => Math.max(0, p - 1))} disabled={incomingPage === 0} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft className="w-4 h-4" /></button>
+                                                        <span className="text-xs text-gray-500">{incomingPage + 1} / {totalPages}</span>
+                                                        <button onClick={() => setIncomingPage(p => Math.min(totalPages - 1, p + 1))} disabled={incomingPage === totalPages - 1} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronRight className="w-4 h-4" /></button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })() : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                 </SectionCard>
 
                                 <SectionCard title="All Services" icon={<Activity className="w-4 h-4 text-purple-400" />} className="flex flex-col h-full">

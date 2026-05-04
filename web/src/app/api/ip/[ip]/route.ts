@@ -114,7 +114,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
                     SELECT dst_ip AS peer, SUM(bytes) AS total_bytes, count() AS flow_count
                     FROM flows
                     WHERE src_ip = {ip:String} AND ${timeFilter}
-                    GROUP BY peer ORDER BY total_bytes DESC LIMIT 50
+                    GROUP BY peer ORDER BY total_bytes DESC LIMIT 10
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
@@ -126,7 +126,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
                     SELECT src_ip AS peer, SUM(bytes) AS total_bytes, count() AS flow_count
                     FROM flows
                     WHERE dst_ip = {ip:String} AND ${timeFilter}
-                    GROUP BY peer ORDER BY total_bytes DESC LIMIT 50
+                    GROUP BY peer ORDER BY total_bytes DESC LIMIT 10
                 `,
                 query_params: { ip },
                 format: 'JSONEachRow',
