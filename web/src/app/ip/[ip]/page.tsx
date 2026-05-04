@@ -41,12 +41,16 @@ function IPDetailContent() {
     const [exporting, setExporting] = useState(false);
     const [outgoingPage, setOutgoingPage] = useState(0);
     const [incomingPage, setIncomingPage] = useState(0);
+    const [servicesPage, setServicesPage] = useState(0);
+    const [applicationsPage, setApplicationsPage] = useState(0);
     const DONUT_PAGE_SIZE = 10;
     const isLoggedIn = useAuth();
 
     useEffect(() => {
         setOutgoingPage(0);
         setIncomingPage(0);
+        setServicesPage(0);
+        setApplicationsPage(0);
     }, [ip, interval]);
 
     useEffect(() => {
@@ -357,16 +361,46 @@ function IPDetailContent() {
                                     })() : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                 </SectionCard>
 
+                                {/* All Services — paginated */}
                                 <SectionCard title="All Services" icon={<Activity className="w-4 h-4 text-purple-400" />} className="flex flex-col h-full">
-                                    <div className="h-64">
-                                        {donuts.topPorts?.length > 0 ? (
-                                            <TopPortsChart data={donuts.topPorts} isGuest={isLoggedIn === false} />
-                                        ) : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
-                                    </div>
+                                    {donuts.topPorts?.length > 0 ? (() => {
+                                        const totalPages = Math.ceil(donuts.topPorts.length / DONUT_PAGE_SIZE);
+                                        const pageData = donuts.topPorts.slice(servicesPage * DONUT_PAGE_SIZE, (servicesPage + 1) * DONUT_PAGE_SIZE);
+                                        return (
+                                            <>
+                                                <div className="h-64">
+                                                    <TopPortsChart data={pageData} isGuest={isLoggedIn === false} />
+                                                </div>
+                                                {totalPages > 1 && (
+                                                    <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-800">
+                                                        <button onClick={() => setServicesPage(p => Math.max(0, p - 1))} disabled={servicesPage === 0} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft className="w-4 h-4" /></button>
+                                                        <span className="text-xs text-gray-500">{servicesPage + 1} / {totalPages}</span>
+                                                        <button onClick={() => setServicesPage(p => Math.min(totalPages - 1, p + 1))} disabled={servicesPage === totalPages - 1} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronRight className="w-4 h-4" /></button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })() : <p className="text-gray-500 text-sm text-center py-8">No data</p>}
                                 </SectionCard>
 
+                                {/* All Applications — paginated */}
                                 <SectionCard className="flex flex-col h-full">
-                                    <TopServicesCard data={donuts.topServices || []} title="All Applications" isGuest={isLoggedIn === false} />
+                                    {donuts.topServices?.length > 0 ? (() => {
+                                        const totalPages = Math.ceil(donuts.topServices.length / DONUT_PAGE_SIZE);
+                                        const pageData = donuts.topServices.slice(applicationsPage * DONUT_PAGE_SIZE, (applicationsPage + 1) * DONUT_PAGE_SIZE);
+                                        return (
+                                            <>
+                                                <TopServicesCard data={pageData} title="All Applications" isGuest={isLoggedIn === false} />
+                                                {totalPages > 1 && (
+                                                    <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-800">
+                                                        <button onClick={() => setApplicationsPage(p => Math.max(0, p - 1))} disabled={applicationsPage === 0} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft className="w-4 h-4" /></button>
+                                                        <span className="text-xs text-gray-500">{applicationsPage + 1} / {totalPages}</span>
+                                                        <button onClick={() => setApplicationsPage(p => Math.min(totalPages - 1, p + 1))} disabled={applicationsPage === totalPages - 1} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronRight className="w-4 h-4" /></button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        );
+                                    })() : <TopServicesCard data={[]} title="All Applications" isGuest={isLoggedIn === false} />}
                                 </SectionCard>
                             </div>
                         )}

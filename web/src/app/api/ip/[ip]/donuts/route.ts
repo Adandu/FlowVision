@@ -53,7 +53,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             WHERE (src_ip = {ip:String} OR dst_ip = {ip:String}) AND ${timeFilter}
             GROUP BY dst_port, protocol
             ORDER BY bytes DESC
-            LIMIT 10
+            LIMIT 100
         `;
         const topPortsRaw = await clickhouse.query({
             query: portsQuery,
@@ -74,7 +74,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
         const topPorts = Array.from(portAppMap.entries())
             .map(([port, total_bytes]) => ({ port, total_bytes }))
             .sort((a, b) => b.total_bytes - a.total_bytes)
-            .slice(0, 10);
+            .slice(0, 50);
 
         const user = await getCurrentUser();
 
@@ -137,7 +137,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
         const topServices = Array.from(serviceMap.entries())
             .map(([service, data]) => ({ service, total_bytes: data.total_bytes, color: data.color }))
             .sort((a, b) => b.total_bytes - a.total_bytes)
-            .slice(0, 5);
+            .slice(0, 30);
 
         if (!user) {
             incoming.forEach((r: any) => r.src_ip = obfuscateIp(r.src_ip));
