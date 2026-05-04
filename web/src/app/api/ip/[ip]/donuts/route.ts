@@ -39,7 +39,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             WHERE src_ip = {ip:String} AND ${timeFilter}
             GROUP BY dst_ip
             ORDER BY bytes DESC
-            LIMIT 5
+            LIMIT 50
         `;
         const outgoing = await clickhouse.query({
             query: outgoingQuery,
