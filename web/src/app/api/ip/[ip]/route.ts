@@ -188,6 +188,21 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             app_name: getAppName(Number(r.port)),
         }));
 
+        // GeoIP enrichment for recent flows (adds src_asn / dst_asn)
+        const { batchGeoIPLookup } = await import('@/lib/geoip');
+        const flowIps = new Set<string>();
+        recentFlowsRows.forEach((r: any) => {
+            if (r.src_ip) flowIps.add(r.src_ip);
+            if (r.dst_ip) flowIps.add(r.dst_ip);
+        });
+        const flowGeoMap = await batchGeoIPLookup(Array.from(flowIps));
+        recentFlowsRows.forEach((r: any) => {
+            const srcGeo = flowGeoMap[r.src_ip];
+            if (srcGeo) r.src_asn = srcGeo.asn || srcGeo.isp;
+            const dstGeo = flowGeoMap[r.dst_ip];
+            if (dstGeo) r.dst_asn = dstGeo.asn || dstGeo.isp;
+        });
+
         const user = await getCurrentUser();
         if (!user) {
             topPeersAsSrcRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
