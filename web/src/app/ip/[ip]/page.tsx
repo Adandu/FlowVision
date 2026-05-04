@@ -341,7 +341,7 @@ function IPDetailContent() {
                                 {data.topPeersAsSrc?.length > 0 && (
                                     <SectionCard title="Top Destinations (this IP as source)" icon={<ArrowUpRight className="w-4 h-4 text-blue-400" />}>
                                         <TopHostsChart
-                                            data={data.topPeersAsSrc.map((r: any) => ({ ip: r.peer, total_bytes: r.total_bytes }))}
+                                            data={data.topPeersAsSrc.map((r: any) => ({ ip: r.peer, total_bytes: r.total_bytes, displayName: r.peer_displayName }))}
                                             title="Top Destinations"
                                             onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)}
                                         />
@@ -350,7 +350,7 @@ function IPDetailContent() {
                                 {data.topPeersAsDst?.length > 0 && (
                                     <SectionCard title="Top Sources (this IP as destination)" icon={<ArrowDownLeft className="w-4 h-4 text-emerald-400" />}>
                                         <TopHostsChart
-                                            data={data.topPeersAsDst.map((r: any) => ({ ip: r.peer, total_bytes: r.total_bytes }))}
+                                            data={data.topPeersAsDst.map((r: any) => ({ ip: r.peer, total_bytes: r.total_bytes, displayName: r.peer_displayName }))}
                                             title="Top Sources"
                                             onIpClick={(clickedIp) => router.push(`/ip/${clickedIp}`)}
                                         />

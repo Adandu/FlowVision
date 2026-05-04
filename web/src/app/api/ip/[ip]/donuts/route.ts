@@ -25,7 +25,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             WHERE dst_ip = {ip:String} AND ${timeFilter}
             GROUP BY src_ip
             ORDER BY bytes DESC
-            LIMIT 5
+            LIMIT 10
         `;
         const incoming = await clickhouse.query({
             query: incomingQuery,
