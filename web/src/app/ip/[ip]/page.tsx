@@ -6,7 +6,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import nextDynamic from 'next/dynamic';
-import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle, Clock, ArrowLeftRight, Download, Server, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowDownLeft, Network, Activity, AlertCircle, Clock, ArrowLeftRight, Download, Server, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import StatCard from '@/components/StatCard';
 import SectionCard from '@/components/SectionCard';
@@ -287,6 +287,44 @@ function IPDetailContent() {
                                         </tbody>
                                     </table>
                                 </div>
+                            </SectionCard>
+                        )}
+
+                        {/* Traffic by Service */}
+                        {data.serviceBreakdown?.length > 0 && (
+                            <SectionCard
+                                title={`Traffic by Service (${data.serviceBreakdown.length})`}
+                                icon={<Globe className="w-4 h-4 text-emerald-400" />}
+                            >
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                                            <th className="text-left py-2 pr-4">Service</th>
+                                            <th className="text-right py-2 pr-4">Bytes</th>
+                                            <th className="text-right py-2 pr-4">Flows</th>
+                                            <th className="w-8" />
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {data.serviceBreakdown.map((r: any) => (
+                                            <tr key={r.service} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                                <td className="py-2 pr-4 text-gray-200 flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full inline-block shrink-0" style={{ backgroundColor: r.color }} />
+                                                    {r.service}
+                                                </td>
+                                                <td className="text-right py-2 pr-4 text-gray-300">{formatBytes(Number(r.total_bytes))}</td>
+                                                <td className="text-right py-2 pr-4 text-gray-400">{Number(r.flow_count).toLocaleString()}</td>
+                                                <td className="py-2 pl-2">
+                                                    <Link
+                                                        href={flowLogForIp(r.drillPort ? `&port=${r.drillPort}` : '')}
+                                                        className="text-blue-400 hover:text-blue-300 text-xs"
+                                                        title="View flows"
+                                                    >→</Link>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </SectionCard>
                         )}
 
