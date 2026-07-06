@@ -296,7 +296,7 @@ function IPDetailContent() {
                                 <Network className="w-4 h-4 text-blue-400" /> Traffic Flow Diagram (Sankey Graph)
                             </h2>
                             <div className="w-full -mt-4">
-                                <FlowDiagramChart srcIp={ip} data={flowDiagram || []} />
+                                <FlowDiagramChart srcIp={ip} data={flowDiagram || []} isGuest={isLoggedIn === false} />
                             </div>
                         </div>
 

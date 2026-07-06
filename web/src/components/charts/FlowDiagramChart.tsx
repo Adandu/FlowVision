@@ -16,6 +16,7 @@ interface SankeyLink {
 interface Props {
     srcIp: string;
     data: { dst_ip: string; app: string; bytes: number }[];
+    isGuest?: boolean;
 }
 
 function formatBytes(bytes: number) {
@@ -26,7 +27,7 @@ function formatBytes(bytes: number) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-export default function FlowDiagramChart({ srcIp, data }: Props) {
+export default function FlowDiagramChart({ srcIp, data, isGuest = false }: Props) {
     if (!data || data.length === 0) {
         return <div className="text-center text-gray-500 py-12">No flow data available for this source.</div>;
     }
@@ -38,8 +39,9 @@ export default function FlowDiagramChart({ srcIp, data }: Props) {
     nodesMap.set(srcIp, { name: srcIp, itemStyle: { color: '#3B82F6' } });
 
     data.forEach(item => {
-        // App Node (intermediate)
-        const appName = item.app || 'Unknown';
+        // App Node (intermediate) — redact the service/app name for guests, matching
+        // the same convention already applied to TopPortsChart/ProtocolChart/TopServicesCard.
+        const appName = isGuest ? '*****' : (item.app || 'Unknown');
         const appNodeId = `App: ${appName}`;
         if (!nodesMap.has(appNodeId)) {
             nodesMap.set(appNodeId, { name: appNodeId, itemStyle: { color: '#8B5CF6' } });
@@ -78,7 +80,8 @@ export default function FlowDiagramChart({ srcIp, data }: Props) {
                 }
                 const source = params.data.source.replace(/^(App|Dst): /, '');
                 const target = params.data.target.replace(/^(App|Dst): /, '');
-                return `${source} → ${target}<br/><b>${formatBytes(params.data.value)}</b>`;
+                const value = isGuest ? '*****' : formatBytes(params.data.value);
+                return `${source} → ${target}<br/><b>${value}</b>`;
             }
         },
         series: {
