@@ -6,7 +6,6 @@ import { useSearchParams } from 'next/navigation';
 import { Globe, ChevronLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import nextDynamic from 'next/dynamic';
-import { useAuth } from '@/hooks/useAuth';
 
 const TopHostsChart = nextDynamic(() => import('@/components/charts/TopHostsChart'), { ssr: false });
 
@@ -16,7 +15,6 @@ function ActiveIpsContent() {
     const searchParams = useSearchParams();
     const interval = searchParams.get('interval') || 'Live';
     const queryInterval = interval === 'Live' ? '5m' : interval;
-    const isLoggedIn = useAuth();
 
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -62,7 +60,6 @@ function ActiveIpsContent() {
                     {loading && <div className="animate-pulse w-3 h-3 rounded-full bg-blue-500 ml-4" />}
                 </div>
 
-                {/* IPs are already obfuscated by backend for guests — no overlay needed */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[300px]">
                         {data?.topDestinations && <TopHostsChart data={data.topDestinations} title="Top Destinations" onIpClick={(ip: string) => window.location.href = `/ip/${ip}`} />}

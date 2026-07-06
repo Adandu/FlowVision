@@ -52,7 +52,7 @@ function networkDirection(src: string, dst: string): 'out' | 'in' | 'int' | 'ext
     return 'ext';
 }
 
-export default function FlowTable({ flows, isGuest = false, highlightIp, showNetworkDirection }: { flows: Flow[]; isGuest?: boolean; highlightIp?: string; showNetworkDirection?: boolean }) {
+export default function FlowTable({ flows, highlightIp, showNetworkDirection }: { flows: Flow[]; highlightIp?: string; showNetworkDirection?: boolean }) {
     const { timezone } = useTimezone();
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(0);
@@ -160,15 +160,15 @@ export default function FlowTable({ flows, isGuest = false, highlightIp, showNet
                                     {flow.dst_asn && <span className="text-gray-500 text-xs"> ({flow.dst_asn.replace(/^AS\d+\s+/, '')})</span>}
                                 </td>
                                 <td className="px-4 py-2.5">
-                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isGuest ? 'text-gray-400 bg-gray-800' : (PROTOCOL_COLORS[flow.protocol] || PROTOCOL_COLORS.Other)}`}>
-                                        {isGuest ? '*****' : flow.protocol}
+                                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${PROTOCOL_COLORS[flow.protocol] || PROTOCOL_COLORS.Other}`}>
+                                        {flow.protocol}
                                     </span>
                                 </td>
                                 <td className="px-4 py-2.5 text-gray-300 font-mono text-xs">
-                                    {isGuest ? <span className="text-gray-400 font-mono">*****</span> : <>{flow.dst_port} <span className="text-gray-500">({getAppName(flow.dst_port)})</span></>}
+                                    {flow.dst_port} <span className="text-gray-500">({getAppName(flow.dst_port)})</span>
                                 </td>
-                                <td className="px-4 py-2.5 text-gray-300 text-xs">{isGuest ? <span className="text-gray-400">*****</span> : formatBytes(flow.bytes)}</td>
-                                <td className="px-4 py-2.5 text-gray-400 text-xs">{isGuest ? <span className="text-gray-400">*****</span> : flow.packets}</td>
+                                <td className="px-4 py-2.5 text-gray-300 text-xs">{formatBytes(flow.bytes)}</td>
+                                <td className="px-4 py-2.5 text-gray-400 text-xs">{flow.packets}</td>
                             </tr>
                         );
                         })}

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Sparkles, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 
 interface Props {
     interval: string;
@@ -12,7 +11,6 @@ interface Props {
 
 export default function AISummaryWidget({ interval, context, ip }: Props) {
     // ALL hooks must come before any conditional return (Rules of Hooks)
-    const isLoggedIn = useAuth();
     const [summary, setSummary] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>('');
@@ -21,8 +19,6 @@ export default function AISummaryWidget({ interval, context, ip }: Props) {
     const [collapsed, setCollapsed] = useState(false);
 
     const fetchSummary = useCallback(async () => {
-        // Skip fetch entirely for guests or while auth is loading
-        if (!isLoggedIn) { setLoading(false); return; }
         setLoading(true);
         setError('');
         try {
@@ -45,14 +41,13 @@ export default function AISummaryWidget({ interval, context, ip }: Props) {
         } finally {
             setLoading(false);
         }
-    }, [interval, context, ip, isLoggedIn]);
+    }, [interval, context, ip]);
 
     useEffect(() => {
         fetchSummary();
     }, [fetchSummary]);
 
     // Conditional returns come AFTER all hook declarations
-    if (isLoggedIn === false) return null;
     if (!visible && !loading) return null;
 
     const providerLabel: Record<string, string> = {

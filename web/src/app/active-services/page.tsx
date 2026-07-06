@@ -6,7 +6,6 @@ import { useSearchParams } from 'next/navigation';
 import { Server, ChevronLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import nextDynamic from 'next/dynamic';
-import { useAuth } from '@/hooks/useAuth';
 
 const TopPortsChart = nextDynamic(() => import('@/components/charts/TopPortsChart'), { ssr: false });
 
@@ -16,7 +15,6 @@ function ActiveServicesContent() {
     const searchParams = useSearchParams();
     const interval = searchParams.get('interval') || 'Live';
     const queryInterval = interval === 'Live' ? '5m' : interval;
-    const isLoggedIn = useAuth();
 
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -63,7 +61,7 @@ function ActiveServicesContent() {
                 </div>
 
                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[500px]">
-                    {data?.topPorts && <TopPortsChart data={data.topPorts} isGuest={isLoggedIn === false} />}
+                    {data?.topPorts && <TopPortsChart data={data.topPorts} />}
                 </div>
             </main>
         </div>

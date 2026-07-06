@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
-import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 import { buildTimeFilter, buildIpFilter, buildProtocolFilter, buildPortFilter, combineFilters } from '@/lib/queryFilters';
 
 export async function GET(request: Request) {
@@ -75,9 +74,6 @@ export async function GET(request: Request) {
       format: 'JSONEachRow',
     }).then(r => r.json());
 
-    const user = await getCurrentUser();
-    const isGuest = !user;
-
     const allIps = new Set<string>();
     rows.forEach((r: any) => {
       if (r.src_ip) allIps.add(r.src_ip);
@@ -94,14 +90,7 @@ export async function GET(request: Request) {
       if (dstGeo) r.dst_asn = dstGeo.asn || dstGeo.isp;
     });
 
-    if (isGuest) {
-      rows.forEach((r: any) => {
-        r.src_ip = obfuscateIp(r.src_ip);
-        r.dst_ip = obfuscateIp(r.dst_ip);
-      });
-    } else {
-      await applyAliases(rows);
-    }
+    await applyAliases(rows);
 
     return NextResponse.json({ success: true, data: rows });
   } catch (error) {

@@ -111,18 +111,4 @@ export async function verifyTokenEdge(token: string | undefined): Promise<boolea
     return !!payload;
 }
 
-import crypto from 'crypto';
-
-export function obfuscateIp(ip: string): string {
-    if (!ip) return ip;
-    if (ip.includes(':')) return '****:****:****:****';
-    const parts = ip.split('.');
-    if (parts.length === 4) {
-        // Hash the IP to create a deterministic but anonymous identifier suffix
-        const hash = crypto.createHash('md5').update(ip).digest('hex').substring(0, 3);
-        return `***.***.***.${hash}`;
-    }
-    return '***.***.***.***';
-}
-
 export { COOKIE_NAME };

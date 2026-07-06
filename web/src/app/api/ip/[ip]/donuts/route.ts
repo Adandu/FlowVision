@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
-import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 
 export async function GET(req: Request, { params }: { params: Promise<{ ip: string }> }) {
     try {
@@ -76,9 +75,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             .sort((a, b) => b.total_bytes - a.total_bytes)
             .slice(0, 50);
 
-        const user = await getCurrentUser();
-
-        // Collect unique IPs for GeoLookup before obfuscation
+        // Collect unique IPs for GeoLookup
         const allIps = new Set<string>();
         incoming.forEach((r: any) => allIps.add(r.src_ip));
         outgoing.forEach((r: any) => allIps.add(r.dst_ip));
@@ -139,13 +136,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             .sort((a, b) => b.total_bytes - a.total_bytes)
             .slice(0, 30);
 
-        if (!user) {
-            incoming.forEach((r: any) => r.src_ip = obfuscateIp(r.src_ip));
-            outgoing.forEach((r: any) => r.dst_ip = obfuscateIp(r.dst_ip));
-        } else {
-            await applyAliases(incoming);
-            await applyAliases(outgoing);
-        }
+        await applyAliases(incoming);
+        await applyAliases(outgoing);
 
         return NextResponse.json({ success: true, incoming, outgoing, topPorts, topServices });
     } catch (error) {

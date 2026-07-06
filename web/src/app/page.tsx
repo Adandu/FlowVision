@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import nextDynamic from 'next/dynamic';
 import { Activity, Globe, Clock, Server, ArrowRightLeft, ArrowUpRight, ArrowDownLeft, ArrowLeftRight, List } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import { useFilters } from '@/hooks/useFilters';
 import Navbar from '@/components/Navbar';
 import FilterBar from '@/components/FilterBar';
@@ -32,7 +31,6 @@ function DashboardContent() {
   const [data, setData] = useState<any>(null);
   const [flows, setFlows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const isLoggedIn = useAuth();
 
   useEffect(() => {
     let isMounted = true;
@@ -142,16 +140,16 @@ function DashboardContent() {
 
           <SectionCard title="Top 10 Services" icon={<Server className="w-4 h-4 text-purple-400" />} className="backdrop-blur-sm flex flex-col h-full">
             <div className="flex-1 w-full relative">
-              {data && <TopPortsChart data={data.topPorts.slice(0, 10)} isGuest={isLoggedIn === false} />}
+              {data && <TopPortsChart data={data.topPorts.slice(0, 10)} />}
             </div>
           </SectionCard>
 
           <SectionCard title="Protocol Breakdown" icon={<ArrowLeftRight className="w-4 h-4 text-amber-400" />} className="backdrop-blur-sm">
-            {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} isGuest={isLoggedIn === false} />}
+            {data?.protocolBreakdown?.length > 0 && <ProtocolChart data={data.protocolBreakdown} />}
           </SectionCard>
 
           <SectionCard className="backdrop-blur-sm flex flex-col h-full">
-            <TopServicesCard data={data?.topServices?.slice(0, 10) || []} title="Top 10 Applications" isGuest={isLoggedIn === false} />
+            <TopServicesCard data={data?.topServices?.slice(0, 10) || []} title="Top 10 Applications" />
           </SectionCard>
         </div>
 
@@ -173,7 +171,7 @@ function DashboardContent() {
           headerRight={<Link href="/flow-log" className="text-sm text-blue-400 hover:text-blue-300 hover:underline">View all →</Link>}
           className="backdrop-blur-sm"
         >
-          {flows.length > 0 && <FlowTable flows={flows} isGuest={isLoggedIn === false} showNetworkDirection />}
+          {flows.length > 0 && <FlowTable flows={flows} showNetworkDirection />}
           {flows.length === 0 && !loading && <p className="text-gray-500 text-sm text-center py-8">No flows recorded yet</p>}
         </SectionCard>
       </main>

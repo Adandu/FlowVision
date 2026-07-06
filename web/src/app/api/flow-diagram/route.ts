@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
-import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -97,12 +96,7 @@ export async function GET(request: Request) {
 
         const allRows = [...outgoing, ...incoming];
 
-        const user = await getCurrentUser();
-        if (!user) {
-            allRows.forEach((row: any) => { row.dst_ip = obfuscateIp(row.dst_ip); });
-        } else {
-            await applyAliases(allRows);
-        }
+        await applyAliases(allRows);
 
         return NextResponse.json({ success: true, data: allRows });
 

@@ -2,7 +2,7 @@
 
 ## What is FlowVision?
 
-FlowVision is a self-hosted, real-time Netflow analyzer built for homelabs and small networks. It receives NetFlow v5 data from your router or firewall, stores it in ClickHouse, and provides a modern web dashboard for traffic analysis.
+FlowVision is a self-hosted, real-time Netflow analyzer built for homelabs and small networks. It receives NetFlow v9 data from your router or firewall, stores it in ClickHouse, and provides a modern web dashboard for traffic analysis.
 
 **Features:**
 - Real-time bandwidth + traffic charts
@@ -21,7 +21,7 @@ FlowVision is a self-hosted, real-time Netflow analyzer built for homelabs and s
 ## Requirements
 
 - Docker with Docker Compose
-- A router/firewall that can export NetFlow v5 (OPNsense, pfSense, MikroTik, etc.)
+- A router/firewall that can export NetFlow v9 (OPNsense, pfSense, MikroTik, etc.)
 - ~2GB RAM (ClickHouse is memory-hungry for larger datasets)
 - Port 2055/UDP open toward the Docker host
 
@@ -196,18 +196,6 @@ Click your avatar/initials in the top-right navbar to access your profile.
 - **Change Password** — current + new password form
 
 ---
-
----
-
-## Guest Access and Obfuscation
-
-FlowVision supports a **Guest Mode** for unauthenticated users (if `AUTH_MODE=local` or `proxy`). Guests can view the dashboard and flow logs, but sensitive data is automatically obfuscated:
-
-- **IP Addresses**: External IPs are replaced with `*****` by the backend.
-- **Charts**: Legends for Ports, Protocols, and Applications are redacted using `*****`.
-- **Flow Tables**: Protocol, Port, Bytes, and Packets are redacted using `*****`.
-- **Interactivity**: Guests **can** click on redacted IPs to view the detail page (which remains redacted), allowing for structural analysis without data exposure.
-- **AI Summary**: The AI Traffic Summary is hidden entirely for guests.
 
 ---
 

@@ -11,14 +11,12 @@ const COLORS: Record<string, string> = {
     Other: '#6B7280',
 };
 
-const mask = (i: number) => '*'.repeat(5 + (i % 3));
-
-export default function ProtocolChart({ data, isGuest = false }: { data: { proto: string; total_bytes: number }[]; isGuest?: boolean }) {
+export default function ProtocolChart({ data }: { data: { proto: string; total_bytes: number }[] }) {
     const options = {
         tooltip: {
             trigger: 'item',
             formatter: (params: any) => {
-                return `${params.marker}${params.name}<br/>Traffic: <b>${isGuest ? '*****' : formatBytes(params.value)}</b> (${params.percent}%)`;
+                return `${params.marker}${params.name}<br/>Traffic: <b>${formatBytes(params.value)}</b> (${params.percent}%)`;
             }
         },
         legend: LEGEND_CONFIG,
@@ -32,9 +30,9 @@ export default function ProtocolChart({ data, isGuest = false }: { data: { proto
                 itemStyle: { borderRadius: 8, borderColor: '#111827', borderWidth: 2 },
                 label: { show: false },
                 labelLine: { show: false },
-                data: data.map((item, i) => ({
+                data: data.map((item) => ({
                     value: item.total_bytes,
-                    name: isGuest ? mask(i) : item.proto,
+                    name: item.proto,
                     itemStyle: { color: COLORS[item.proto] || '#6B7280' },
                 })),
             }

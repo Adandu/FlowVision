@@ -27,11 +27,6 @@ export async function lookupIp(ip: string): Promise<GeoIPData> {
         return { private: true, country: 'Private Network', countryCode: 'LAN', isp: 'Local', asn: '', lat: 0, lon: 0, city: '', flag: '🏠' };
     }
 
-    // Fast-path for obfuscated IPs (Guest Mode / Privacy Mode)
-    if (ip.startsWith('***.')) {
-        return { private: true, country: 'Hidden IP', countryCode: 'UN', isp: 'Hidden', asn: '', lat: 0, lon: 0, city: '', flag: '🕵️' };
-    }
-
     // Return cached result if available
     const cached = geoCache.get(ip);
     if (cached && Date.now() - cached.ts < CACHE_TTL) {

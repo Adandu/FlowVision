@@ -4,10 +4,7 @@ import ReactECharts from 'echarts-for-react';
 import { DONUT_CENTER, DONUT_RADIUS, DONUT_HEIGHT, LEGEND_CONFIG } from './chartConstants';
 import { formatBytes } from '@/lib/formatters';
 
-// Use asterisks — block chars (████) don't render in ECharts default font
-const mask = (i: number) => '*'.repeat(5 + (i % 3)); // *****  ******  *******  cycling
-
-export default function TopPortsChart({ data, isGuest = false }: { data: { port: number | string; total_bytes: number }[]; isGuest?: boolean }) {
+export default function TopPortsChart({ data }: { data: { port: number | string; total_bytes: number }[] }) {
     const sortedData = [...data].sort((a, b) => b.total_bytes - a.total_bytes);
 
     const options = {
@@ -15,7 +12,7 @@ export default function TopPortsChart({ data, isGuest = false }: { data: { port:
             trigger: 'item',
             formatter: (params: any) => {
                 const p = params.data;
-                return `${params.marker} ${p.name}<br/>Traffic: <b>${isGuest ? '*****' : formatBytes(p.value)}</b>`;
+                return `${params.marker} ${p.name}<br/>Traffic: <b>${formatBytes(p.value)}</b>`;
             }
         },
         legend: LEGEND_CONFIG,
@@ -29,8 +26,8 @@ export default function TopPortsChart({ data, isGuest = false }: { data: { port:
                 itemStyle: { borderRadius: 8, borderColor: '#111827', borderWidth: 2 },
                 label: { show: false },
                 labelLine: { show: false },
-                data: sortedData.map((item, i) => ({
-                    name: isGuest ? mask(i) : String(item.port),
+                data: sortedData.map((item) => ({
+                    name: String(item.port),
                     value: item.total_bytes
                 }))
             }

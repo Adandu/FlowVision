@@ -1,28 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout', '/_next', '/favicon.ico', '/api/config'];
-const GUEST_PATHS = ['/', '/active-ips', '/active-services', '/active-applications', '/flow-log'];
-const GUEST_PATH_PREFIXES = ['/ip/'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Always allow public paths
   if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) return NextResponse.next();
-
-  let guestModeEnabled = false;
-  try {
-    const apiUrl = `http://127.0.0.1:${process.env.PORT || 3000}/api/config`;
-    const configRes = await fetch(apiUrl, { next: { revalidate: 10 } });
-    const config = await configRes.json();
-    guestModeEnabled = !!config.guest_mode_enabled;
-  } catch (e) { }
-
-  if (guestModeEnabled) {
-    const isProtectedApi = pathname.startsWith('/api/admin') || pathname.startsWith('/api/auth/me') || pathname.startsWith('/api/profile') || pathname.startsWith('/api/alerts');
-    const isGuestRoute = GUEST_PATHS.includes(pathname) || GUEST_PATH_PREFIXES.some(p => pathname.startsWith(p)) || (pathname.startsWith('/api/') && !isProtectedApi);
-    if (isGuestRoute) return NextResponse.next();
-  }
 
   const authMode = process.env.AUTH_MODE || 'disabled';
 

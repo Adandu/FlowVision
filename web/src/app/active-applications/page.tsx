@@ -6,7 +6,6 @@ import { useSearchParams } from 'next/navigation';
 import { Activity, ChevronLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import nextDynamic from 'next/dynamic';
-import { useAuth } from '@/hooks/useAuth';
 
 const TopServicesCard = nextDynamic(() => import('@/components/charts/TopServicesCard'), { ssr: false });
 
@@ -16,7 +15,6 @@ function ActiveApplicationsContent() {
     const searchParams = useSearchParams();
     const interval = searchParams.get('interval') || 'Live';
     const queryInterval = interval === 'Live' ? '5m' : interval;
-    const isLoggedIn = useAuth();
 
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -65,7 +63,7 @@ function ActiveApplicationsContent() {
 
                 <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl min-h-[500px] flex flex-col">
                     {data?.topServices && data.topServices.length > 0 ? (
-                        <TopServicesCard data={data.topServices} title="All Detected Applications" isGuest={isLoggedIn === false} />
+                        <TopServicesCard data={data.topServices} title="All Detected Applications" />
                     ) : (
                         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-500">
                             <Activity className="w-10 h-10 opacity-40" />

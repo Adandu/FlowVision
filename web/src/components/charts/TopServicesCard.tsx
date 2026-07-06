@@ -8,12 +8,9 @@ import { formatBytes } from '@/lib/formatters';
 interface Props {
     data: { service: string; total_bytes: number; color: string }[];
     title?: string;
-    isGuest?: boolean;
 }
 
-const mask = (i: number) => '*'.repeat(5 + (i % 3));
-
-export default function TopServicesCard({ data, title = 'Top 10 Applications', isGuest = false }: Props) {
+export default function TopServicesCard({ data, title = 'Top 10 Applications' }: Props) {
     if (!data || data.length === 0) {
         return (
             <>
@@ -32,7 +29,7 @@ export default function TopServicesCard({ data, title = 'Top 10 Applications', i
             trigger: 'item',
             formatter: (params: any) => {
                 const item = params.data;
-                return `${params.marker} ${item.name}<br/>Traffic: <b>${isGuest ? '*****' : formatBytes(item.value)}</b>`;
+                return `${params.marker} ${item.name}<br/>Traffic: <b>${formatBytes(item.value)}</b>`;
             }
         },
         legend: LEGEND_CONFIG,
@@ -46,8 +43,8 @@ export default function TopServicesCard({ data, title = 'Top 10 Applications', i
                 itemStyle: { borderRadius: 8, borderColor: '#111827', borderWidth: 2 },
                 label: { show: false },
                 labelLine: { show: false },
-                data: data.map((d, i) => ({
-                    name: isGuest ? mask(i) : d.service,
+                data: data.map((d) => ({
+                    name: d.service,
                     value: d.total_bytes,
                     itemStyle: { color: d.color }
                 }))

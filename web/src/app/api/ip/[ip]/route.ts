@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
-import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 import { buildTimeFilter } from '@/lib/queryFilters';
 
 export async function GET(req: Request, { params }: { params: Promise<{ ip: string }> }) {
@@ -299,26 +298,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ ip: stri
             .sort((a, b) => b.total_bytes - a.total_bytes)
             .slice(0, 30);
 
-        const user = await getCurrentUser();
-        if (!user) {
-            topPeersAsSrcRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
-            topPeersAsDstRows.forEach((r: any) => r.peer = obfuscateIp(r.peer));
-            recentFlowsRows.forEach((r: any) => {
-                r.timestamp = r.last_flow_time;
-                r.src_ip = obfuscateIp(r.src_ip);
-                r.dst_ip = obfuscateIp(r.dst_ip);
-            });
-        } else {
-            await applyAliases(topPeersAsSrcRows);
-            await applyAliases(topPeersAsDstRows);
-            recentFlowsRows.forEach((r: any) => { r.timestamp = r.last_flow_time; });
-            await applyAliases(recentFlowsRows);
-        }
+        await applyAliases(topPeersAsSrcRows);
+        await applyAliases(topPeersAsDstRows);
+        recentFlowsRows.forEach((r: any) => { r.timestamp = r.last_flow_time; });
+        await applyAliases(recentFlowsRows);
 
         return NextResponse.json({
             success: true,
             data: {
-                requested_ip: user ? ip : obfuscateIp(ip),
+                requested_ip: ip,
                 summary: summaryRows[0] || null,
                 timelineAsSrc: timelineAsSrcRows,
                 timelineAsDst: timelineAsDstRows,

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
 import { applyAliases } from '@/lib/aliases';
-import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 import { buildTimeFilter, buildIpFilter, buildProtocolFilter, buildPortFilter, combineFilters } from '@/lib/queryFilters';
 
 export async function GET(request: Request) {
@@ -223,9 +222,6 @@ export async function GET(request: Request) {
       .sort((a, b) => b.total_bytes - a.total_bytes)
       .slice(0, 10);
 
-    const user = await getCurrentUser();
-    const isGuest = !user;
-
     // Collect all IPs we need to lookup
     const allIps = new Set<string>();
     topDestinations.forEach((d: any) => allIps.add(d.ip));
@@ -233,7 +229,7 @@ export async function GET(request: Request) {
     geoMapRaw.forEach((g: any) => allIps.add(g.ip));
     topPublicIpsRaw.forEach((g: any) => allIps.add(g.ip));
 
-    // Batch GeoIP Lookup (on the backend, before obfuscation)
+    // Batch GeoIP Lookup
     const { batchGeoIPLookup } = await import('@/lib/geoip');
     const geoDataMap = await batchGeoIPLookup(Array.from(allIps));
 
@@ -315,16 +311,10 @@ export async function GET(request: Request) {
       return g;
     }).filter((g: any) => g.lat && g.lon); // Only keep IPs with coordinates for the map
 
-    // Apply Admin IP Aliases or Obfuscate for Guests
-    if (isGuest) {
-      topDestinations.forEach((d: any) => d.ip = obfuscateIp(d.ip));
-      topSources.forEach((s: any) => s.ip = obfuscateIp(s.ip));
-      geoTraffic.forEach((g: any) => g.ip = obfuscateIp(g.ip));
-    } else {
-      await applyAliases(topDestinations);
-      await applyAliases(topSources);
-      await applyAliases(geoTraffic);
-    }
+    // Apply Admin IP Aliases
+    await applyAliases(topDestinations);
+    await applyAliases(topSources);
+    await applyAliases(geoTraffic);
 
     const counts = (activeCounts as any[])[0] || {};
 

@@ -12,7 +12,6 @@ import StatCard from '@/components/StatCard';
 import SectionCard from '@/components/SectionCard';
 import FilterBar from '@/components/FilterBar';
 import { useTimezone, formatTimestamp, getTimezoneOffsetMinutes } from '@/lib/timezone';
-import { useAuth } from '@/hooks/useAuth';
 import { formatBytes } from '@/lib/formatters';
 import { useFilters } from '@/hooks/useFilters';
 
@@ -44,7 +43,6 @@ function IPDetailContent() {
     const [servicesPage, setServicesPage] = useState(0);
     const [applicationsPage, setApplicationsPage] = useState(0);
     const DONUT_PAGE_SIZE = 10;
-    const isLoggedIn = useAuth();
 
     useEffect(() => {
         setOutgoingPage(0);
@@ -334,7 +332,7 @@ function IPDetailContent() {
                                 <Network className="w-4 h-4 text-blue-400" /> Traffic Flow Diagram (Sankey Graph)
                             </h2>
                             <div className="w-full -mt-4">
-                                <FlowDiagramChart srcIp={ip} data={flowDiagram || []} isGuest={isLoggedIn === false} />
+                                <FlowDiagramChart srcIp={ip} data={flowDiagram || []} />
                             </div>
                         </div>
 
@@ -412,7 +410,7 @@ function IPDetailContent() {
                                         return (
                                             <>
                                                 <div className="h-64">
-                                                    <TopPortsChart data={pageData} isGuest={isLoggedIn === false} />
+                                                    <TopPortsChart data={pageData} />
                                                 </div>
                                                 {totalPages > 1 && (
                                                     <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-800">
@@ -433,7 +431,7 @@ function IPDetailContent() {
                                         const pageData = sortedServices.slice(applicationsPage * DONUT_PAGE_SIZE, (applicationsPage + 1) * DONUT_PAGE_SIZE);
                                         return (
                                             <>
-                                                <TopServicesCard data={pageData} title="All Applications" isGuest={isLoggedIn === false} />
+                                                <TopServicesCard data={pageData} title="All Applications" />
                                                 {totalPages > 1 && (
                                                     <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-800">
                                                         <button onClick={() => setApplicationsPage(p => Math.max(0, p - 1))} disabled={applicationsPage === 0} className="p-1 text-gray-400 hover:text-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft className="w-4 h-4" /></button>
@@ -443,7 +441,7 @@ function IPDetailContent() {
                                                 )}
                                             </>
                                         );
-                                    })() : <TopServicesCard data={[]} title="All Applications" isGuest={isLoggedIn === false} />}
+                                    })() : <TopServicesCard data={[]} title="All Applications" />}
                                 </SectionCard>
                             </div>
                             );
@@ -486,7 +484,7 @@ function IPDetailContent() {
                                 </Link>
                             }
                         >
-                            <FlowTable flows={data.recentFlows || []} isGuest={isLoggedIn === false} showNetworkDirection />
+                            <FlowTable flows={data.recentFlows || []} showNetworkDirection />
                         </SectionCard>
                     </>
                 )}

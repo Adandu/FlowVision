@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation';
 import { List, Download } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import nextDynamic from 'next/dynamic';
-import { useAuth } from '@/hooks/useAuth';
 import { useFilters } from '@/hooks/useFilters';
 import FilterBar from '@/components/FilterBar';
 
@@ -35,7 +34,6 @@ function FlowLogContent() {
   const [direction, setDirection] = useState('');
   const [minBytes, setMinBytes] = useState('0');
   const [exporting, setExporting] = useState(false);
-  const isLoggedIn = useAuth();
   const { interval, toApiParams, activeCount, ...filterRest } = useFilters('1h');
   const searchParams = useSearchParams();
   const eitherIp = searchParams.get('ip') || ''; // set when navigating from IP detail
@@ -150,7 +148,7 @@ function FlowLogContent() {
         <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 backdrop-blur-sm shadow-xl">
           {loading && <p className="text-gray-500 text-sm animate-pulse text-center py-8">Loading flows…</p>}
           {!loading && flows.length === 0 && <p className="text-gray-500 text-sm text-center py-8">No flows match the current filters</p>}
-          {!loading && flows.length > 0 && <FlowTable flows={flows} isGuest={isLoggedIn === false} showNetworkDirection />}
+          {!loading && flows.length > 0 && <FlowTable flows={flows} showNetworkDirection />}
         </div>
       </main>
     </div>

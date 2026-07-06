@@ -170,35 +170,48 @@ JWT payload: `{ sub: userId, role: 'admin'|'viewer', iat, exp }`
 
 ---
 
-## Guest Obfuscation Implementation
-
-When adding new charts or tables that display sensitive data, you **must** implement obfuscation for unauthenticated guests:
-
-1. **Check Auth State**: Use the `useAuth()` hook in your page or component.
-2. **Propagate `isGuest`**: Pass `isGuest={isLoggedIn === false}` to the component.
-3. **Redact in Component**:
-   - For **ECharts**: Replace legend/tooltip labels with `*****` strings. Do not use block characters like `████` as they may not render in default browser fonts within the canvas.
-   - For **Tables**: Wrap sensitive cell content in a conditional: `{isGuest ? '*****' : data}`.
-4. **IPs**: Backend already obfuscates IPs for guests. Retain clickable links to `/ip/[ip]` as the detail page also handles obfuscation.
-
----
-
 ## AI Integration Architecture
 
 FlowVision uses a multi-provider AI summary feature:
 
 - **Settings**: Stored in ClickHouse `settings` table (`ai_enabled`, `ai_provider`, `ai_gemini_key`, etc.).
 - **Backend API**: `/api/ai/summary` fetches traffic metrics, constructs a prompt, and calls the active AI provider (Gemini, Claude, or OpenAI).
-- **Frontend**: `AISummaryWidget.tsx` renders the output. It **must** hide itself for guests to prevent leaked metadata or API costs.
+- **Frontend**: `AISummaryWidget.tsx` renders the output.
 - **Security**: API keys are never sent to the frontend.
 
 ---
 
 ## Telegraf → ClickHouse Data Flow
 
-Telegraf runs with the `netflow` input plugin (UDP :2055) and a Starlark processor that:
-- Reads NetFlow v5 fields: `src`, `dst`, `in_bytes`, `in_packets`, `protocol` (string), `src_port`, `dst_port`
+Telegraf runs with the `netflow` input plugin (UDP :2055, `protocol = "netflow v9"`) and a
+Starlark processor that:
+- Reads NetFlow v9 fields: `src`, `dst`, `in_bytes`, `in_packets`, `protocol` (string), `src_port`, `dst_port`
 - Maps protocol string → UInt8 (TCP=6, UDP=17, ICMP=1)
 - Outputs to the ClickHouse `flows` table via HTTP
+
+**Why v9, not v5:** The real-world exporter (OPNsense in transparent-bridge mode, via its
+native ng_netflow mechanism) only emits NetFlow v9 — it does not support v5. Telegraf's
+`inputs.netflow` plugin normalizes v5, v9, and IPFIX to the *same* output field names
+(`src`, `dst`, `src_port`, `dst_port`, `in_bytes`, `in_packets`, `protocol` as a string),
+so the Starlark processor logic did not need to change field names, only the `protocol`
+config value (`"netflow v5"` → `"netflow v9"`).
+
+**NetFlow v9 template requirement (important operational gotcha):** Unlike v5, which has a
+fixed wire format, v9 is template-based — the exporter periodically sends a template record
+describing the field layout, and Telegraf cannot decode any data records referencing a
+template ID it hasn't seen yet (logged as `Error template not found. Skipping packet until
+the device resends the required template...`). If Telegraf (or its container) is restarted,
+there will be a window — dependent on OPNsense's template refresh interval — where flows are
+silently dropped until the next template retransmission. This is expected v9 behavior, not a
+bug, but should be kept in mind when debugging "no data" after a Telegraf restart.
+
+**OUT_BYTES/OUT_PKTS gotcha (does NOT apply to Telegraf, verified):** OPNsense hardcodes
+NetFlow v9 OUT_BYTES (field 23) / OUT_PKTS (field 24) to 0 and places them after IN_BYTES
+(field 1) / IN_PKTS (field 2) in the record. A naive decoder that maps both IN_* and OUT_*
+fields to one shared/generic field name (last-field-wins) would silently zero out the real
+byte/packet counts. Telegraf's `inputs.netflow` plugin does **not** have this problem: it
+maps every NetFlow/IPFIX field ID to its own distinct field name (`in_bytes` vs `out_bytes`,
+`in_packets` vs `out_packets`), so IN_BYTES is never overwritten. The Starlark processor
+still deliberately reads only `in_bytes`/`in_packets` as defense in depth.
 
 Key file: `docker/telegraf/telegraf.conf`

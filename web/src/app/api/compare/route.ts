@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { clickhouse } from '@/lib/clickhouse';
-import { getCurrentUser, obfuscateIp } from '@/lib/auth';
 import { buildIpFilter, buildProtocolFilter, buildPortFilter, combineFilters } from '@/lib/queryFilters';
 
 // Only allow datetime-local format (YYYY-MM-DDTHH:mm or YYYY-MM-DD HH:mm:ss)
@@ -121,17 +120,6 @@ export async function GET(request: Request) {
       fetchPeriodData(timeFilterA, extraFilters, limit),
       fetchPeriodData(timeFilterB, extraFilters, limit),
     ]);
-
-    const user = await getCurrentUser();
-    const isGuest = !user;
-
-    if (isGuest) {
-      const obfuscate = (arr: any[], key = 'ip') => arr.forEach(r => { r[key] = obfuscateIp(r[key]); });
-      obfuscate(periodA.topDestinations);
-      obfuscate(periodA.topSources);
-      obfuscate(periodB.topDestinations);
-      obfuscate(periodB.topSources);
-    }
 
     return NextResponse.json({ success: true, data: { periodA, periodB } });
   } catch (error) {
