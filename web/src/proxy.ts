@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/logout', '/_next', '/favicon.ico', '/api/config'];
-const GUEST_PATHS = ['/', '/active-ips', '/active-services', '/flow-log'];
+const GUEST_PATHS = ['/', '/active-ips', '/active-services', '/active-applications', '/flow-log'];
+const GUEST_PATH_PREFIXES = ['/ip/'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -19,7 +20,7 @@ export async function proxy(request: NextRequest) {
 
   if (guestModeEnabled) {
     const isProtectedApi = pathname.startsWith('/api/admin') || pathname.startsWith('/api/auth/me') || pathname.startsWith('/api/profile') || pathname.startsWith('/api/alerts');
-    const isGuestRoute = GUEST_PATHS.includes(pathname) || (pathname.startsWith('/api/') && !isProtectedApi);
+    const isGuestRoute = GUEST_PATHS.includes(pathname) || GUEST_PATH_PREFIXES.some(p => pathname.startsWith(p)) || (pathname.startsWith('/api/') && !isProtectedApi);
     if (isGuestRoute) return NextResponse.next();
   }
 

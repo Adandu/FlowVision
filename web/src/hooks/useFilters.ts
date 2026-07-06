@@ -69,8 +69,20 @@ export function useFilters(defaultInterval = '1h') {
     if (filters.port) p.port = filters.port;
     if (filters.protocol) p.proto = filters.protocol;
     if (filters.interval === 'custom') {
-      if (filters.from) p.from = filters.from;
-      if (filters.to) p.to = filters.to;
+      // <input type="datetime-local"> values are wall-clock in the browser's local
+      // timezone with no offset info. The backend stores/compares timestamps in UTC,
+      // so convert before sending — otherwise custom ranges are silently shifted by
+      // the browser's UTC offset (e.g. UTC+3 users get flows from 3 hours later than
+      // the range they picked).
+      const toUtc = (v: string) => {
+        if (!v) return '';
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 19);
+      };
+      const fromUtc = toUtc(filters.from);
+      const toUtcVal = toUtc(filters.to);
+      if (fromUtc) p.from = fromUtc;
+      if (toUtcVal) p.to = toUtcVal;
     }
     return p;
   }, [filters]);

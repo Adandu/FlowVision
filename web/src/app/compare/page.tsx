@@ -115,7 +115,18 @@ function CompareContent() {
     setError('');
     setLoading(true);
     try {
-      const params = new URLSearchParams({ fromA, toA, fromB, toB });
+      // <input type="datetime-local"> gives wall-clock time in the browser's local
+      // timezone with no offset info; the backend compares against UTC-stored
+      // timestamps, so convert here or the picked ranges are shifted by the
+      // browser's UTC offset.
+      const toUtc = (v: string) => {
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? v : d.toISOString().slice(0, 19);
+      };
+      const params = new URLSearchParams({
+        fromA: toUtc(fromA), toA: toUtc(toA),
+        fromB: toUtc(fromB), toB: toUtc(toB),
+      });
       if (srcIp) params.set('src', srcIp);
       if (dstIp) params.set('dst', dstIp);
       const res = await fetch(`/api/compare?${params}`);
